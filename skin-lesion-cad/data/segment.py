@@ -78,6 +78,70 @@ class Segment:
                 opening, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (i, i)))
         return closing
 
+    @staticmethod
+    def fill_holes(mask):
+        """
+        Fill_holes fill holes in the mask
+
+        Parameters
+        ----------
+        mask : np.ndarray(np.uint8)
+            binary mask to fill holes in
+
+        Returns
+        -------
+        np.ndarray
+            mask with holes filled
+        """
+        contour,_ = cv2.findContours(mask,
+                                     cv2.RETR_CCOMP,
+                                     cv2.CHAIN_APPROX_SIMPLE)
+        # need to copy the image because drawContours modifies the 
+        # original image by reference (C++ style)
+        mask_filled = mask.copy()
+        for cnt in contour:
+            cv2.drawContours(mask_filled, [cnt], -1, 255, -1)
+
+    @staticmethod
+    def fov_mask(image):
+        """
+        Create a mask of the field of view
+        
+        Parameters
+        ----------
+        image : np.ndarray
+            image to create the mask from (RGB)
+
+        Returns
+        -------
+        np.ndarray
+            mask of the field of view
+        """
+        image_hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        image_hsv = cv2.medianBlur(image_hsv, 7)
+        
+        # black range for HSV to get a mask of black-ish colors
+        black_mask = cv2.inRange(image_hsv, (0, 0, 0, 0), (180, 255, 80, 0))
+        retval, labels, stats, centroids = cv2.connectedComponentsWithStatsWithAlgorithm(black_mask, 4, cv2.CV_32S, cv2.CCL_WU)
+        
+        for lab in np.unique(labels):
+            
+            # ignore background label
+            if lab == 0:
+                continue
+            
+            x, y, w, h, area = stats[lab]
+            # check if cc bbox is in the corner of the image and keep  cc if it is
+            if (x == 0 or x + w == image.shape[1]) and (y == 0 or y + h == image.shape[0]) and area > 1000:
+                black_mask[labels == lab] = 255
+            else:
+                black_mask[labels == lab] = 0
+        
+        # dilate the mask to include neighboring black pixels
+        black_mask = cv2.dilate(black_mask, cv2.getStructuringElement(cv2.MORPH_CROSS, (10, 10)), iterations=2)
+        return black_mask
+
+        return mask_filled
     def segment(self, img, img_name, save=False):
         """
         segment segment the lesion image
@@ -98,12 +162,14 @@ class Segment:
         _type_
             _description_
         """
+        # TODO: Get FOV and ignore it
+        
         gray_img = img[:, :, 2]
         clahe = cv2.createCLAHE(clipLimit=0.8, tileGridSize=(8, 8))
         gray_img_enh = clahe.apply(gray_img)
 
         gray_img_enh_asf = self.asf(
-            gray_img_enh, kernel_size=(5, 5))
+            gray_img_enh, kernel_size=5)
         blur = cv2.GaussianBlur(gray_img_enh_asf, (7, 7), 0)
 
         ret3, th3 = cv2.threshold(
@@ -151,6 +217,7 @@ if __name__ == "__main__":
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             except:
                 print(str(img_path))
+
             output = Segment().segment(img, img_path, save=True)
             dice_scores.append(dice(mask[:, :, 0], output))
 
