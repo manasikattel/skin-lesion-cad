@@ -29,4 +29,3 @@ if __name__ == '__main__':
     for fn in tqdm(img_paths):
         image = cv2.imread(str(fn))
         img_segm, inp_img = segm.segment(image, fn, save=True, resize=resize)
-        break
