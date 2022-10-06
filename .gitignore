@@ -132,4 +132,5 @@ dmypy.json
 .vscode/
 
 # Ignore data folders
-data/
+data/processed
+data/raw
