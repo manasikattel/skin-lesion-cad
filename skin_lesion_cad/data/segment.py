@@ -194,7 +194,7 @@ class Segment:
         # also smoothes the contours of segmentation
         return cv2.morphologyEx(image, cv2.MORPH_OPEN, se)
 
-    def segment(self, img, img_name, save=False, resize=None):
+    def segment(self, img, img_name, save=False, resize=None, overrite=False):
         """
         Segment segment the lesion image
 
@@ -208,11 +208,23 @@ class Segment:
             Flag, whether or not to save the masks, by default False
         resize: float optional
             If not None will resize the image by given scale factor, None by default.
+        overrite: bool optional
+            If True will overwrite existing images, False by default.
         Returns
         -------
         Tuple[np.ndarray, np.ndarray]
             output, img - segmentation mask and inpainted image
         """
+        # load segmentation if images already exist
+        save_dir = Path(str(img_name.parent).replace("raw", "processed"))
+        save_dir.mkdir(parents=True, exist_ok=True)
+        scale_str = 1 if resize is None else str(resize).replace('.', '_')
+        save_path = save_dir/Path(img_name.stem+f"_mask_{scale_str}.png")
+        save_path_inp = save_dir/Path(img_name.stem+f"_inpaint_{scale_str}.png")
+        if not overrite and save_path.exists() and save_path_inp.exists():
+            return cv2.imread(str(save_path), cv2.IMREAD_GRAYSCALE),\
+                   cv2.imread(str(save_path_inp), cv2.IMREAD_GRAYSCALE)
+        
 
         # extract FOV mask to ignore it for segmentation
         fov = Segment.fov_mask(img)
@@ -262,26 +274,20 @@ class Segment:
         # fill holes
         output = Segment.fill_holes(output)
 
-        # remove hair-like structures and smooth
+        # remove hair-like structures and smooth and obtain final segmentation mask
         output = Segment.remove_hair_like_structures(output)
 
         if save:
             save_dir = Path(str(img_name.parent).replace(
                 "raw", "processed"))
             save_dir.mkdir(parents=True, exist_ok=True)
-            save_path = save_dir/Path(img_name.stem+"_mask.png")
-            save_path_inp = save_dir/Path(img_name.stem+"_inpaint.png")
-            if resize is not None:
-
-                cv2.imwrite(str(save_path),
-                            cv2.resize(output, (0, 0),
-                                       fx=0.5, fy=0.5))
-
-                cv2.imwrite(str(save_path_inp),
-                            cv2.resize(img, (0, 0),
-                                       fx=0.5, fy=0.5))
-            else:
-                cv2.imwrite(str(save_path), output)
-                cv2.imwrite(str(save_path_inp), img)
+            scale_str = 1 if resize is None else str(resize).replace('.', '_')
+            save_path = save_dir/Path(img_name.stem+f"_mask_{scale_str}.png")
+            save_path_inp = save_dir/Path(img_name.stem+f"_inpaint_{scale_str}.png")
+            
+            cv2.imwrite(str(save_path), cv2.resize(output, (0, 0),
+                                                   fx=resize, fy=resize))
+            cv2.imwrite(str(save_path_inp), cv2.resize(img, (0, 0),
+                                                       fx=resize, fy=resize))
 
         return output, img

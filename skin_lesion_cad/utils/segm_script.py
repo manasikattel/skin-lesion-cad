@@ -23,7 +23,7 @@ img_paths = raw_data/process_path
 img_paths = list(img_paths.glob('*'))
 
 if __name__ == '__main__':
-    
+
     segm = Segment()
 
     for fn in tqdm(img_paths):
