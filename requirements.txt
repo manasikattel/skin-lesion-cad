@@ -11,4 +11,5 @@ h5py
 matplotlib
 colorama
 tqdm
+pyarrow
 terminaltables
