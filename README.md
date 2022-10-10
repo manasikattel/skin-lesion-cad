@@ -42,3 +42,21 @@ data/
 
 18 directories
 ```
+
+## Segment the images
+Performs basic preprocessing in images:
+* hair removal
+* inpainting
+* segmentation
+
+Saves inpainted image and mask in corresponding folders in the `/data/processed`.
+
+Run script 
+
+```$ python -m skin_lesion_cad.utils.segm_script chall1/train/nevus```
+
+from repo root `../skin-lesion-cad$`. Parameter passed (`chall1/train/nevus`) defines which images from which folder to process.
+
+Could also pass `--resize` option to resize images by a factor. For example to downscale image by 2 run
+
+``` python -m skin_lesion_cad.utils.segm_script chall1/train/nevus --resize 0.5```

@@ -132,7 +132,5 @@ dmypy.json
 .vscode/
 
 # Ignore data folders
-data/raw/chall1/train
-data/raw/chall1/val
-data/raw/chall2/train
-data/raw/chall2/val
+data/processed
+data/raw
