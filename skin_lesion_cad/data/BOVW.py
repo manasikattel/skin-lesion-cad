@@ -10,12 +10,14 @@ from sklearn.cluster import KMeans, MiniBatchKMeans
 from joblib import Parallel, delayed, parallel_backend
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.cluster import KMeans
-from skin_lesion_cad.features.colour import ColorFeaturesExtractorDescriptor
+from skin_lesion_cad.features.colour import ColorFeaturesDescriptor
+from sklearn.preprocessing import StandardScaler
+
 
 class DenseDescriptor:
     """Generate Descriptors with dense sampling"""
 
-    def __init__(self, descriptor, min_keypoints=100, max_keypoints=500, kpSize=10):
+    def __init__(self, descriptor, min_keypoints=100, max_keypoints=500, kp_size=10):
         """
         __init__ Constructor for DenseDescriptor class
 
@@ -28,14 +30,14 @@ class DenseDescriptor:
             Min keypoints to be sampled from an image, by default 100
         max_keypoints : int, optional
             Max keypoints to be sampled from an image, by default 500
-        kpSize : int, optional
+        kp_size : int, optional
             Radius of the keypoint for dense sampling, by default 10
         """
 
         self.descriptor = descriptor
         self.min_keypoints = min_keypoints
         self.max_keypoints = max_keypoints
-        self.kpSize = kpSize
+        self.kp_size = kp_size
 
     def _sample_keypoints(self, img,  num):
         """
@@ -56,7 +58,7 @@ class DenseDescriptor:
         """
         x, y = img.shape[0], img.shape[1]
         additional_kp = [cv2.KeyPoint(
-            random.randint(0, y-1), random.randint(0, x-1), size=self.kpSize) for i in range(num)]
+            random.randint(0, y-1), random.randint(0, x-1), size=self.kp_size) for i in range(num)]
         return additional_kp
 
     def _sample_keypoints_with_mask(self, mask,  num):
@@ -81,7 +83,7 @@ class DenseDescriptor:
 
         if num <= num_available:
             additional_kp = [cv2.KeyPoint(int(i[1]), int(
-                i[0]), size=self.kpSize) for i in random.sample(list(all_mask_points), num)]
+                i[0]), size=self.kp_size) for i in random.sample(list(all_mask_points), num)]
         else:
             additional_kp = self._sample_keypoints(mask, num)
 
@@ -172,6 +174,14 @@ class BagofWords(TransformerMixin, BaseEstimator):
         self.random_state = random_state
 
     def _descriptors_to_histogram(self, descriptors):
+        
+        # apply prepocessing before prediction if color features
+        descriptors = np.array(descriptors) # TODO: remove this line after descr recalc
+        # already fixed color descr feature extra to return np.array
+        descriptors[np.isnan(descriptors)] = 0
+        descriptors[np.isinf(descriptors)] = 0
+        descriptors = self.scaler.transform(descriptors).astype(np.float32)
+        
         return np.histogram(
             self.dictionary.predict(descriptors), bins=range(self.dictionary.n_clusters+1)
         )[0]
@@ -192,23 +202,27 @@ class BagofWords(TransformerMixin, BaseEstimator):
         """
         random_state = check_random_state(self.random_state)
 
-        self.des_list = X
-        descriptors = np.vstack(self.des_list).astype(np.float32)
+        descriptors = np.vstack(X).astype(np.float32)
 
         
-        # TODO: think about scaling the descriptors before clustering
-        # relevant for custom descriptors
-        # scaler = StandardScaler()
-        # descriptors = scaler.fit_transform(descriptors)
+        # learn and save scaling for color features
+        descriptors[np.isnan(descriptors)] = 0
+        descriptors[np.isinf(descriptors)] = 0
+        self.scaler = StandardScaler()
+        descriptors = self.scaler.fit_transform(descriptors)
+        
+        
         self.dictionary = KMeans(n_clusters=self.n_words, random_state=random_state,
                                         max_iter=100).fit(descriptors)        
-        # X_trans = [self._descriptors_to_histogram(self.des_list[i]) for i in range(len(self.des_list))]
         
-        X_trans = Parallel(n_jobs=self.n_jobs)(
-            delayed(self._descriptors_to_histogram)(
-                self.des_list[i])
-            for i in range(len(self.des_list))
-        )
+        X_trans = [self._descriptors_to_histogram(X[i]) for i in range(len(X))]
+        # doesn't work with color features
+        # and perhaps with other features as well
+        # X_trans = Parallel(n_jobs=self.n_jobs)(
+        #     delayed(self._descriptors_to_histogram)(
+        #         X[i])
+        #     for i in range(len(X))
+        # )
         
         frequency_vectors = np.stack(X_trans)
         # df is the number of images that a visual word appears in
@@ -219,22 +233,25 @@ class BagofWords(TransformerMixin, BaseEstimator):
         return tfidf
 
     def transform(self, X, y=None):
-        self.des_list = X
-
-        X_trans = Parallel(n_jobs=-1)(
-            delayed(self._descriptors_to_histogram)(
-                self.des_list[i])
-            for i in range(len(self.des_list))
-        )
+        
+        # doesn't work with color features
+        # and perhaps with other features as well
+        # X_trans = Parallel(n_jobs=-1)(
+        #     delayed(self._descriptors_to_histogram)(
+        #         X[i])
+        #     for i in range(len(X))
+        # )
+        
+        X_trans = [self._descriptors_to_histogram(X[i]) for i in range(len(X))]
         frequency_vectors = np.stack(X_trans)
         tfidf = self.tfidftransformer.transform(frequency_vectors)
         return tfidf
 
 
 class ColorDescriptor(DenseDescriptor):
-    def __init__(self, descriptor,  color_spaces:dict, meanshift=None, rel_col=None, min_keypoints=100, max_keypoints=500, kpSize=25):
-        super().__init__(descriptor, min_keypoints, max_keypoints, kpSize)
-        self.fe = ColorFeaturesExtractorDescriptor(color_spaces, meanshift, rel_col, kpSize)
+    def __init__(self, descriptor,  color_spaces:dict, meanshift=None, min_keypoints=100, max_keypoints=500, kp_size=25):
+        super().__init__(descriptor, min_keypoints, max_keypoints, kp_size)
+        self.fe = ColorFeaturesDescriptor(color_spaces, meanshift, kp_size)
         
         
     def compute(self, img, keypoints):

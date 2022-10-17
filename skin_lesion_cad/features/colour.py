@@ -48,11 +48,10 @@ class ColorFeaturesExtractor:
         return img - non_leasion_means
     
     
-class ColorFeaturesExtractorDescriptor:
-    def __init__(self, color_spaces:dict, meanshift=None, rel_col=None, kp_size=25) -> None:
+class ColorFeaturesDescriptor:
+    def __init__(self, color_spaces:dict, meanshift=None, kp_size=25) -> None:
         self.color_spaces = color_spaces
         self.meanshift = meanshift
-        self.rel_col = rel_col
         self.kpSize = kp_size
         
     def extract_masked(self, img, keypoints):
@@ -62,22 +61,22 @@ class ColorFeaturesExtractorDescriptor:
         img = img.astype(np.float32)
         
         kp_features = [[] for _ in range(len(keypoints))]
-        kp_masks = [np.zeros(img.shape[:2], dtype=np.uint8) for _ in range(len(keypoints))]
-        kp_masks = [cv2.circle(mask,
-                               (int(keypoints[midx].pt[0]),
-                                int(keypoints[midx].pt[1])),
-                               self.kpSize, 1, -1) for midx, mask in enumerate(kp_masks)]
 
         for csp_name, csp in self.color_spaces.items():
             img_csp = cv2.cvtColor(img, csp)
             for i in range(img_csp.shape[2]):
                 for kp_idx in range(len(keypoints)):
-                    kp_features[kp_idx].extend(ColorFeaturesExtractorDescriptor.masked_features(img_csp[:,:,i][kp_masks[kp_idx]>0], csp_name, i))
-        return kp_features
-    @staticmethod  
-    def masked_features(pixels, clrsp, clrsp_idx):
-        if not len(pixels):
-            raise ValueError(f'No pixels found\nEmpty mask')
+                    kp_features[kp_idx].extend(self.sliced_features(img_csp[:,:,i], keypoints[kp_idx]))
+        return np.array(kp_features).astype(np.float32)
+    
+    def sliced_features(self, img, kp):
+        # slice a patch around the keypoint
+        x1 = max(0, int(kp.pt[1] - self.kpSize))
+        x2 = min(img.shape[0], int(kp.pt[1] + self.kpSize))
+        y1 = max(0, int(kp.pt[0] - self.kpSize))
+        y2 = min(img.shape[1], int(kp.pt[0] + self.kpSize))
+        pixels = img[x1:x2, y1:y2].flatten()
+        
         if len(pixels):
             res = np.array([np.mean(pixels),
                    np.std(pixels),
