@@ -13,3 +13,4 @@ colorama
 tqdm
 pyarrow
 terminaltables
+py-cpuinfo==8.0.0

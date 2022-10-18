@@ -1,17 +1,20 @@
-from sklearnex import patch_sklearn
-patch_sklearn()
-
-import cv2
-import random
-import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.utils import check_random_state
-from sklearn.cluster import KMeans, MiniBatchKMeans
-from joblib import Parallel, delayed, parallel_backend
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.cluster import KMeans
-from skin_lesion_cad.features.colour import ColorFeaturesDescriptor
 from sklearn.preprocessing import StandardScaler
+from skin_lesion_cad.features.colour import ColorFeaturesDescriptor
+from sklearn.cluster import KMeans
+from sklearn.feature_extraction.text import TfidfTransformer
+from joblib import Parallel, delayed, parallel_backend
+from sklearn.cluster import KMeans, MiniBatchKMeans
+from sklearn.utils import check_random_state
+from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
+import random
+import cv2
+import platform
+import cpuinfo
+
+if "Intel" in cpuinfo.get_cpu_info()['brand_raw']:
+    from sklearnex import patch_sklearn
+    patch_sklearn()
 
 
 class DenseDescriptor:
@@ -106,7 +109,7 @@ class DenseDescriptor:
             tuple of keypoint objects
         """
         desc_keypoints = self.descriptor.detect(img, None)
-        
+
         if len(desc_keypoints) < self.min_keypoints:
             if mask is not None:
                 additional_kp = self._sample_keypoints_with_mask(mask,
@@ -118,7 +121,7 @@ class DenseDescriptor:
 
         if len(desc_keypoints) > self.max_keypoints:
             desc_keypoints = random.sample(desc_keypoints, self.max_keypoints)
-        
+
         return desc_keypoints
 
     def compute(self, img, keypoints):
@@ -174,14 +177,15 @@ class BagofWords(TransformerMixin, BaseEstimator):
         self.random_state = random_state
 
     def _descriptors_to_histogram(self, descriptors):
-        
+
         # apply prepocessing before prediction if color features
-        descriptors = np.array(descriptors) # TODO: remove this line after descr recalc
+        # TODO: remove this line after descr recalc
+        descriptors = np.array(descriptors)
         # already fixed color descr feature extra to return np.array
         descriptors[np.isnan(descriptors)] = 0
         descriptors[np.isinf(descriptors)] = 0
         descriptors = self.scaler.transform(descriptors).astype(np.float32)
-        
+
         return np.histogram(
             self.dictionary.predict(descriptors), bins=range(self.dictionary.n_clusters+1)
         )[0]
@@ -204,17 +208,15 @@ class BagofWords(TransformerMixin, BaseEstimator):
 
         descriptors = np.vstack(X).astype(np.float32)
 
-        
         # learn and save scaling for color features
         descriptors[np.isnan(descriptors)] = 0
         descriptors[np.isinf(descriptors)] = 0
         self.scaler = StandardScaler()
         descriptors = self.scaler.fit_transform(descriptors)
-        
-        
+
         self.dictionary = KMeans(n_clusters=self.n_words, random_state=random_state,
-                                        max_iter=100).fit(descriptors)        
-        
+                                 max_iter=100).fit(descriptors)
+
         X_trans = [self._descriptors_to_histogram(X[i]) for i in range(len(X))]
         # doesn't work with color features
         # and perhaps with other features as well
@@ -223,7 +225,7 @@ class BagofWords(TransformerMixin, BaseEstimator):
         #         X[i])
         #     for i in range(len(X))
         # )
-        
+
         frequency_vectors = np.stack(X_trans)
         # df is the number of images that a visual word appears in
         self.tfidftransformer = TfidfTransformer(smooth_idf=False)
@@ -233,7 +235,7 @@ class BagofWords(TransformerMixin, BaseEstimator):
         return tfidf
 
     def transform(self, X, y=None):
-        
+
         # doesn't work with color features
         # and perhaps with other features as well
         # X_trans = Parallel(n_jobs=-1)(
@@ -241,7 +243,7 @@ class BagofWords(TransformerMixin, BaseEstimator):
         #         X[i])
         #     for i in range(len(X))
         # )
-        
+
         X_trans = [self._descriptors_to_histogram(X[i]) for i in range(len(X))]
         frequency_vectors = np.stack(X_trans)
         tfidf = self.tfidftransformer.transform(frequency_vectors)
@@ -249,11 +251,10 @@ class BagofWords(TransformerMixin, BaseEstimator):
 
 
 class ColorDescriptor(DenseDescriptor):
-    def __init__(self, descriptor,  color_spaces:dict, meanshift=None, min_keypoints=100, max_keypoints=500, kp_size=25):
+    def __init__(self, descriptor,  color_spaces: dict, meanshift=None, min_keypoints=100, max_keypoints=500, kp_size=25):
         super().__init__(descriptor, min_keypoints, max_keypoints, kp_size)
         self.fe = ColorFeaturesDescriptor(color_spaces, meanshift, kp_size)
-        
-        
+
     def compute(self, img, keypoints):
         """
         compute Compute the descriptors from given keypoints.
@@ -271,10 +272,9 @@ class ColorDescriptor(DenseDescriptor):
         """
 
         # des = self.descriptor.compute(img, keypoints=keypoints)
-        
+
         return self.fe.extract_masked(img, keypoints)
-        
-        
+
     def detectAndCompute(self, img, mask=None):
         kp = self.detect(img, mask=mask)
         des = self.compute(img, kp)
