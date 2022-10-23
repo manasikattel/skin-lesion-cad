@@ -312,7 +312,7 @@ class LBPDescriptor(DenseDescriptor):
         kp_features = []
 
         for kp_idx in range(len(keypoints)):
-            kp_features.append(self.sliced_features(
+            kp_features.append(self.lbp_hist(
                 img, keypoints[kp_idx]))
         return np.array(kp_features).astype(np.float32)
 
