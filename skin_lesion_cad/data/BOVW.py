@@ -1,3 +1,4 @@
+from skimage.feature import local_binary_pattern
 from sklearn.preprocessing import StandardScaler
 from skin_lesion_cad.features.colour import ColorFeaturesDescriptor
 from sklearn.cluster import KMeans
@@ -274,6 +275,46 @@ class ColorDescriptor(DenseDescriptor):
         # des = self.descriptor.compute(img, keypoints=keypoints)
 
         return self.fe.extract_masked(img, keypoints)
+
+    def detectAndCompute(self, img, mask=None):
+        kp = self.detect(img, mask=mask)
+        des = self.compute(img, kp)
+        return kp, des
+
+
+class LBPDescriptor(DenseDescriptor):
+    def __init__(self, descriptor, n_points=24, radius=8, kp_size=25, min_keypoints=100, max_keypoints=500, method="default") -> None:
+        super().__init__(descriptor, min_keypoints, max_keypoints, kp_size)
+        self.n_points = n_points
+        self.radius = radius
+        self.method = method
+
+    def lbp_hist(self, img, kp, eps=1e-7):
+        # slice a patch around the keypoint
+        x1 = max(0, int(kp.pt[1] - self.kp_size))
+        x2 = min(img.shape[0], int(kp.pt[1] + self.kp_size))
+        y1 = max(0, int(kp.pt[0] - self.kp_size))
+        y2 = min(img.shape[1], int(kp.pt[0] + self.kp_size))
+        patch = img[x1:x2, y1:y2]
+        lbp = local_binary_pattern(
+            patch, self.n_points, self.radius, self.method)
+        (hist, _) = np.histogram(lbp.ravel(),
+                                 bins=np.arange(0, self .n_points + 3),
+                                 range=(0, self.n_points + 2))
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + eps)
+
+        return hist
+
+    def compute(self, img, keypoints):
+
+        kp_features = []
+
+        for kp_idx in range(len(keypoints)):
+            kp_features.append(self.sliced_features(
+                img, keypoints[kp_idx]))
+        return np.array(kp_features).astype(np.float32)
 
     def detectAndCompute(self, img, mask=None):
         kp = self.detect(img, mask=mask)
