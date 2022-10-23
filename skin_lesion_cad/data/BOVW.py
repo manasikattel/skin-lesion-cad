@@ -283,10 +283,9 @@ class ColorDescriptor(DenseDescriptor):
 
 
 class LBPDescriptor(DenseDescriptor):
-    def __init__(self, descriptor, n_points=24, radius=8, kp_size=25, min_keypoints=100, max_keypoints=500, method="default") -> None:
+    def __init__(self, descriptor, n_points_radius=[(24, 8), (8, 3), (12, 3), (8, 2), (8, 1)], kp_size=25, min_keypoints=100, max_keypoints=500, method="default") -> None:
         super().__init__(descriptor, min_keypoints, max_keypoints, kp_size)
-        self.n_points = n_points
-        self.radius = radius
+        self.n_points_radius = n_points_radius
         self.method = method
 
     def lbp_hist(self, img, kp, eps=1e-7):
@@ -296,16 +295,20 @@ class LBPDescriptor(DenseDescriptor):
         y1 = max(0, int(kp.pt[0] - self.kp_size))
         y2 = min(img.shape[1], int(kp.pt[0] + self.kp_size))
         patch = img[x1:x2, y1:y2]
-        lbp = local_binary_pattern(
-            patch, self.n_points, self.radius, self.method)
-        (hist, _) = np.histogram(lbp.ravel(),
-                                 bins=np.arange(0, self .n_points + 3),
-                                 range=(0, self.n_points + 2))
-        # normalize the histogram
-        hist = hist.astype("float")
-        hist /= (hist.sum() + eps)
 
-        return hist
+        hist_concat = np.array([])
+        for (n_points, radius) in self.n_points_radius:
+            lbp = local_binary_pattern(
+                patch, n_points, radius, self.method)
+            (hist, _) = np.histogram(lbp.ravel(),
+                                     bins=np.arange(0, n_points + 3),
+                                     range=(0, n_points + 2))
+            # normalize the histogram
+            hist = hist.astype("float")
+            hist /= (hist.sum() + eps)
+            hist_concat = np.append(hist_concat, hist)
+
+        return hist_concat
 
     def compute(self, img, keypoints):
 
