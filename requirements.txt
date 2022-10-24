@@ -14,3 +14,5 @@ tqdm
 pyarrow
 terminaltables
 py-cpuinfo==8.0.0
+scikit-learn-intelex
+imbalanced-learn
