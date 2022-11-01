@@ -89,7 +89,7 @@ if __name__ == "__main__":
     train_path = Path(f"data/processed/{chall}/train")
 
     training_names = train_path.rglob("*/*inpaint_0*")
-    image_paths = [i for i in training_names][:10]
+    image_paths = [i for i in training_names]
     image_classes = [0 if ("nevus" in str(i)) else 1 for i in image_paths]
     # mask_paths = [Path(str(image_path.parent).replace("raw", "processed")) /
     #               Path(image_path.stem+"_mask_1_0.png") for image_path in image_paths]
