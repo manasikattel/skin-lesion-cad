@@ -12,11 +12,43 @@ import random
 import cv2
 import cpuinfo
 from scipy.stats import truncnorm
+from sklearn.impute import KNNImputer
 
 if "Intel" in cpuinfo.get_cpu_info()['brand_raw']:
     from sklearnex import patch_sklearn
     patch_sklearn()
 
+
+class DescriptorsTransformer(BaseEstimator, TransformerMixin):
+    
+    def __init__(self, imputation='knn'):
+        self.imp = KNNImputer(missing_values=np.nan, n_neighbors=10, weights='distance', add_indicator=False)
+        self.scaler = StandardScaler()
+        self.imp_type = imputation
+    
+    def fit(self, X, y=None):
+        if self.imp_type != 'knn':
+            X[np.isnan(X)] = 0
+            X[np.isinf(X)] = 0
+        else:
+            X[np.isnan(X)] = np.nan
+            X[np.isinf(X)] = np.nan
+            X = self.imp.fit_transform(X)
+        return self.scaler.fit(X)
+    
+    def transform(self, X, y=None):
+        if self.imp_type != 'knn':
+            X[np.isnan(X)] = 0
+            X[np.isinf(X)] = 0
+        else:
+            X[np.isnan(X)] = np.nan
+            X[np.isinf(X)] = np.nan
+            X = self.imp.transform(X)
+        return self.scaler.transform(X)
+    
+    def fit_transform(self, X, y=None, **fit_params):
+        self.fit(X)
+        return self.transform(X, y)
 
 class DenseDescriptor:
     """Generate Descriptors with dense sampling"""
@@ -178,7 +210,7 @@ class BagofWords(TransformerMixin, BaseEstimator):
     A generic BagofWords for any input descriptors
     """
 
-    def __init__(self, n_words, batch_size=1024, n_jobs=None, random_state=None):
+    def __init__(self, n_words, batch_size=1024, n_jobs=None, random_state=None, transformer=DescriptorsTransformer(imputation='knn')):
         """
         __init__ Constructor for BagofWords class
 
@@ -200,16 +232,14 @@ class BagofWords(TransformerMixin, BaseEstimator):
         self.batch_size = batch_size
         self.n_jobs = n_jobs
         self.random_state = random_state
+        self.transformer = transformer
 
     def _descriptors_to_histogram(self, descriptors, get_tfidf=True):
 
-        # apply prepocessing before prediction if color features
-        # TODO: remove this line after descr recalc
-        descriptors = np.array(descriptors)
-        # already fixed color descr feature extra to return np.array
-        descriptors[np.isnan(descriptors)] = 0
-        descriptors[np.isinf(descriptors)] = 0
-        descriptors = self.scaler.transform(descriptors).astype(np.float32)
+
+        descriptors = np.array(descriptors).astype(np.float32)
+
+        descriptors = self.transformer.transform(descriptors)
 
         use_density = False if get_tfidf else True
         return np.histogram(
@@ -237,10 +267,7 @@ class BagofWords(TransformerMixin, BaseEstimator):
         descriptors = np.vstack(X).astype(np.float32)
 
         # learn and save scaling for color features
-        descriptors[np.isnan(descriptors)] = 0
-        descriptors[np.isinf(descriptors)] = 0
-        self.scaler = StandardScaler()
-        descriptors = self.scaler.fit_transform(descriptors)
+        descriptors = self.transformer.fit_transform(descriptors)
 
         self.dictionary = KMeans(n_clusters=self.n_words, random_state=random_state,
                                  max_iter=100).fit(descriptors)
@@ -341,3 +368,4 @@ class LBPDescriptor(DenseDescriptor):
         kp = self.detect(img, mask=mask)
         des = self.compute(img, kp)
         return kp, des
+
