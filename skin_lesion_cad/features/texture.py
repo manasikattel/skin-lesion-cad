@@ -78,4 +78,3 @@ def get_lbp(image_paths):
         "lbp"+str(i) for i in range(len(lbp_feats[0]))])
     lbp_df["image"] = [str(i) for i in image_paths]
     return lbp_df
-

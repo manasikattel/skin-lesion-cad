@@ -38,3 +38,22 @@ def dice(im1, im2, empty_score=1.0):
     intersection = np.logical_and(im1, im2)
 
     return 2. * intersection.sum() / im_sum
+
+
+def get_class(path, chall):
+    if chall == "chall2":
+        if "bcc" in str(path):
+            return "bcc"
+        elif "mel" in str(path):
+            return "mel"
+        elif "scc" in str(path):
+            return "scc"
+        else:
+            raise ValueError("class needs to be bcc, mel or scc")
+    elif chall == "chall1":
+        if "nevus" in str(path):
+            return 0
+        else:
+            return 1
+    else:
+        raise Exception("Argument chall must be either `chall1` or `chall2`")
