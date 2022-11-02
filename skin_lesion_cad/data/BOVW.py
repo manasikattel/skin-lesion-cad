@@ -328,13 +328,8 @@ class ColorDescriptor(DenseDescriptor):
 
 
 class LBPDescriptor(DenseDescriptor):
-<<<<<<< HEAD
-    def __init__(self, descriptor, n_points_radius=[(24, 8), (8, 3), (12, 3), (8, 2), (8, 1)], kp_size=25, min_keypoints=100, max_keypoints=500, method="default", sample_method='random') -> None:
-        super().__init__(descriptor, min_keypoints, max_keypoints, kp_size, sample_method)
-=======
     def __init__(self, descriptor, n_points_radius=[(24, 8), (8, 3), (12, 3), (8, 2), (8, 1)], kp_size=25, min_keypoints=100, max_keypoints=500, method="uniform") -> None:
         super().__init__(descriptor, min_keypoints, max_keypoints, kp_size)
->>>>>>> 32c21bf7f984c4b801e46dada8b1409b87831146
         self.n_points_radius = n_points_radius
         self.method = method
 
