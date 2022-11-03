@@ -1,4 +1,3 @@
-# %%
 import random
 from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
 import numpy as np

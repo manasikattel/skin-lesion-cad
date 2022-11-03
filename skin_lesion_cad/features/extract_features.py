@@ -72,39 +72,39 @@ def extract_features(image_paths, save_path, mode="train",):
     mshift_params = {'sp': 10, 'sr': 15}  # spatial and color range radius
 
     print("Extracting GLCM features")
-    glcm_df = get_glcm(image_paths).reset_index(drop=True)
+    # glcm_df = get_glcm(image_paths).reset_index(drop=True)
     # glcm_df_masked = get_glcm(image_paths, masked=True).reset_index(drop=True)
 
     print("Extracting LBP features")
-    lbp_df = get_lbp(image_paths).reset_index(drop=True)
+    # lbp_df = get_lbp(image_paths).reset_index(drop=True)
     # lbp_df_masked = get_lbp(image_paths, masked=True).reset_index(drop=True)
 
     # print("Extracting raw color features")
-    # color_df_raw = get_color(
-    #     image_paths, mask_type="ground_truth", color_spaces=color_spaces).reset_index(drop=True)
+    color_df_raw = get_color(
+        image_paths, mask_type="ground_truth", color_spaces=color_spaces).reset_index(drop=True)
 
     # print("Extracting meanshift color features")
     # color_df_ms = get_color(
     #     image_paths, mask_type="ground_truth", color_spaces=color_spaces, mshift_params=mshift_params).reset_index(drop=True)
-    # mask_paths = [Path(str(image_path.parent).replace(
-    #     "raw", "processed")) / Path(image_path.name.replace("inpaint", "mask")) for image_path in image_paths]
+    mask_paths = [Path(str(image_path.parent).replace(
+        "raw", "processed")) / Path(image_path.name.replace("inpaint", "mask")) for image_path in image_paths]
 
-    # shape_df = get_shape(mask_paths)
-    # shape_df.to_feather(
-    #     save_path/Path(f"{CHALLENGE}_{mode}_shape.feather"))
+    shape_df = get_shape(mask_paths)
+    shape_df.to_feather(
+        save_path/Path(f"{CHALLENGE}_{mode}_shape.feather"))
 
-    glcm_df.to_feather(
-        save_path/Path(f"{CHALLENGE}_{mode}_glcm_original_image.feather"))
+    # glcm_df.to_feather(
+    #     save_path/Path(f"{CHALLENGE}_{mode}_glcm_original_image.feather"))
     # glcm_df_masked.to_feather(
     #     save_path/Path(f"{CHALLENGE}_{mode}_glcm_masked.feather"))
 
-    lbp_df.to_feather(
-        save_path/Path(f"{CHALLENGE}_{mode}_lbp_original_image.feather"))
+    # lbp_df.to_feather(
+    #     save_path/Path(f"{CHALLENGE}_{mode}_lbp_original_image.feather"))
     # lbp_df_masked.to_feather(
     #     save_path/Path(f"{CHALLENGE}_{mode}_lbp_masked.feather"))
 
-    # color_df_raw.to_feather(
-    #     save_path/Path(f"{CHALLENGE}_{mode}_color_raw.feather"))
+    color_df_raw.to_feather(
+        save_path/Path(f"{CHALLENGE}_{mode}_color_raw.feather"))
     # color_df_ms.to_feather(
     #     save_path/Path(f"{CHALLENGE}_{mode}_color_meanshift.feather"))
 
@@ -121,19 +121,25 @@ if __name__ == "__main__":
                     'lab': cv2.COLOR_RGB2LAB,  'YCrCb': cv2.COLOR_RGB2YCrCb}
     mshift_params = {'sp': 10, 'sr': 15}  # spatial and color range radius
 
-    train_path = Path(f"data/raw/{CHALLENGE}/train")
-    val_path = Path(f"data/raw/{CHALLENGE}/val")
+    # train_path = Path(f"data/raw/{CHALLENGE}/train")
+    # val_path = Path(f"data/raw/{CHALLENGE}/val")
+    test_path = Path(f"data/processed/{CHALLENGE}/test")
 
     save_path = Path("data/processed/features")
     save_path.mkdir(exist_ok=True, parents=True)
 
-    training_names = train_path.rglob("*.jpg")
-    image_paths_training = [i for i in training_names]
+    # training_names = train_path.rglob("*.jpg")
+    # image_paths_training = [i for i in training_names]
 
-    val_names = val_path.rglob("*.jpg")
-    image_paths_val = [i for i in val_names]
+    # val_names = val_path.rglob("*.jpg")
+    # image_paths_val = [i for i in val_names]
 
+    test_names = test_path.rglob("*_inpaint*")
+    image_paths_test = [i for i in test_names]
+
+    # extract_features(
+    #     image_paths_training, save_path=save_path, mode="train")
+    # extract_features(
+    #     image_paths_val, save_path=save_path, mode="val")
     extract_features(
-        image_paths_training, save_path=save_path, mode="train")
-    extract_features(
-        image_paths_val, save_path=save_path, mode="val")
+        image_paths_test, save_path=save_path, mode="test")
