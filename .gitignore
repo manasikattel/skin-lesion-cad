@@ -134,3 +134,6 @@ dmypy.json
 # Ignore data folders
 data/processed
 data/raw
+
+/*.pkl
+/*csv
