@@ -1,4 +1,3 @@
-# %%
 import random
 from skimage.feature import graycomatrix, graycoprops, local_binary_pattern
 import numpy as np
@@ -79,32 +78,3 @@ def get_lbp(image_paths):
         "lbp"+str(i) for i in range(len(lbp_feats[0]))])
     lbp_df["image"] = [str(i) for i in image_paths]
     return lbp_df
-
-
-if __name__ == "__main__":
-
-    output_dir = Path("data/processed/features")
-    output_dir.mkdir(exist_ok=True, parents=True)
-    chall = "chall2"
-    train_path = Path(f"data/processed/{chall}/train")
-
-    training_names = train_path.rglob("*/*inpaint_0*")
-    image_paths = [i for i in training_names]
-    image_classes = [0 if ("nevus" in str(i)) else 1 for i in image_paths]
-    # mask_paths = [Path(str(image_path.parent).replace("raw", "processed")) /
-    #               Path(image_path.stem+"_mask_1_0.png") for image_path in image_paths]
-
-    print("Extracting GLCM features")
-
-    feat_final_df = get_glcm(image_paths)
-
-    if chall == "chall1":
-        feat_final_df["class"] = feat_final_df["image_0"].apply(
-            lambda x: "nevus" if "nevus" in x else "others")
-    else:
-        feat_final_df["class"] = feat_final_df["image_0"].apply(
-            get_chall2_class)
-    feat_final_df.reset_index(inplace=True)
-    feat_final_df.to_feather(output_dir/Path(f"glcm_features_{chall}.feather"))
-
-    print(f"GLCM features saved to {output_dir}")
