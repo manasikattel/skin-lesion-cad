@@ -51,7 +51,7 @@ def get_class(path, chall):
         else:
             raise ValueError("class needs to be bcc, mel or scc")
     elif chall == "chall1":
-        if "nevus" in str(path):
+        if "nev" in str(path):
             return 0
         else:
             return 1
