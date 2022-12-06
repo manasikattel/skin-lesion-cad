@@ -1,12 +1,15 @@
-import numpy as np
-from omegaconf import DictConfig, OmegaConf
-import hydra
-from typing import Optional
+
 from pathlib import Path
-from pytorch_lightning import LightningDataModule
+from typing import Optional
+
+import hydra
 import matplotlib.pyplot as plt
 import numpy as np
+from omegaconf import DictConfig, OmegaConf
+from pytorch_lightning import LightningDataModule
+
 from skin_lesion_cad.data.transforms import DeNormalize
+
 root = Path("skin_lesion_cad").resolve()
 
 
@@ -24,8 +27,8 @@ def main(cfg: DictConfig) -> Optional[float]:
         image = DeNormalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225]
                             )(data["image"])
-
-        image = (255 * (image - 1) / 2)
+        
+        image = (255 * (image - 1))
         image = image.numpy().astype(
             np.uint8).squeeze().transpose(1, 2, 0)
         plt.imshow(image)
