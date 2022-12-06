@@ -16,3 +16,11 @@ terminaltables
 py-cpuinfo==8.0.0
 scikit-learn-intelex
 imbalanced-learn
+omegaconf
+hydra-core==1.2.0
+torch==1.13.0
+torchaudio==0.14.0
+torchmetrics==0.10.3
+torchvision==0.14.0
+PyYAML==6.0
+pytorch-lightning==1.8.3.post1
