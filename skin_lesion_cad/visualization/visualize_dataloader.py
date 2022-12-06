@@ -1,17 +1,13 @@
-import imp
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from typing import Optional
 from pathlib import Path
 from pytorch_lightning import LightningDataModule
-import os
-import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from skin_lesion_cad.data.transforms import DeNormalize
 root = Path("skin_lesion_cad").resolve()
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 
 @hydra.main(version_base="1.2", config_path=root/Path("config"), config_name="train_config.yaml")
