@@ -24,17 +24,17 @@ def main(cfg: DictConfig) -> Optional[float]:
     data_module = datamodule.data
     data_module.prepare_data()
     for data in data_module.train_dataloader():
-        image = DeNormalize(mean=[0.485, 0.456, 0.406],
-                            std=[0.229, 0.224, 0.225]
-                            )(data["image"])
-        
-        image = (255 * (image - 1))
+        # image = DeNormalize(mean=[0.485, 0.456, 0.406],
+        #                     std=[0.229, 0.224, 0.225]
+        #                     )(data["image"])
+        image = data["image"]
+        # image = (255 * (image - 1))
+        image = (255 * image)
         image = image.numpy().astype(
             np.uint8).squeeze().transpose(1, 2, 0)
         plt.imshow(image)
         plt.title(f"{data['name']} {data['label']}")
         plt.show()
-
 
 if __name__ == "__main__":
     main()

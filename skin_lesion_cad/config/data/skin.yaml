@@ -10,16 +10,19 @@ cfg:
   val_num_workers: 4
   test_num_workers: 4
   train: True
-  INPUT_SIZE: [250, 250]
+  INPUT_SIZE: [224, 224]
   COLOR_SPACE: 'RGB'
+  AVOID_AUGM: True
   SAMPLER:
+    MIN_MAX: True
     TYPE: 'default'
     BORDER_CROP: 'ratio'
     BORDER_CROP_PIXEL: 0
     BORDER_CROP_RATIO: 0.0
     IMAGE_RESIZE: True
-    IMAGE_RESIZE_SHORT: 336
-    COLOR_CONSTANCY: False
+    IMAGE_RESIZE_SHORT: [224, 224]
+    COLOR_CONSTANCY: True
+    APPLY_COLOR_CONSTANCY: False
     AUGMENT:
       NEED_AUGMENT: True
       AUG_METHOD: 'v1_1'
@@ -36,6 +39,6 @@ cfg:
       S_REGION: 1.0
 
     FIX_MEAN_VAR:
-      ENABLE: True
+      ENABLE: False
       SET_MEAN: [0.485, 0.456, 0.406]
       SET_VAR: [0.229, 0.224, 0.225]

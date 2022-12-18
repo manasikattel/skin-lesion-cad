@@ -89,10 +89,11 @@ class MelanomaDataset(Dataset):
     def image_transform(self, img, index):
         img = self.image_pre_process(img)
 
-        if self.split == "train":
-            img = self._train_transform(img, index)
-        else:
-            img = self._val_transform(img, index)
+        if not self.cfg.AVOID_AUGM:
+            if self.split == "train":
+                img = self._train_transform(img, index)
+            else:
+                img = self._val_transform(img, index)
         img = self.image_post_process(img)
         return img
 
@@ -100,11 +101,12 @@ class MelanomaDataset(Dataset):
         # change the format of 'img' to tensor, and change the storage order from 'H x W x C' to 'C x H x W'
         # change the value range of 'img' from [0, 255] to [0.0, 1.0]
         to_tensor = transforms.ToTensor()
-        img = to_tensor(img)
+        img = to_tensor(img)       
         if self.cfg.SAMPLER.FIX_MEAN_VAR.ENABLE:
             normalize = transforms.Normalize(torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_MEAN)),
                                              torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_VAR)))
         else:
+            return img#/255.0
             normalize = extended_transforms.NormalizePerImage()
         return normalize(img)
 
@@ -217,7 +219,7 @@ class MelanomaDataset(Dataset):
                 self.cfg.SAMPLER.IMAGE_RESIZE_SHORT)
             img = resizing(img)
 
-        if self.cfg.SAMPLER.COLOR_CONSTANCY:
+        if self.cfg.SAMPLER.COLOR_CONSTANCY and self.cfg.SAMPLER.APPLY_COLOR_CONSTANCY:
             color_constancy = extended_transforms.ColorConstancy(
                 power=self.cfg.SAMPLER.CONSTANCY_POWER,
                 gamma=None if self.cfg.SAMPLER.CONSTANCY_GAMMA == 0.0 else self.cfg.SAMPLER.CONSTANCY_GAMMA
