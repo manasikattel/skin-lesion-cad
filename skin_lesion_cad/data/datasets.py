@@ -63,7 +63,7 @@ class MelanomaDataset(Dataset):
                 raise ValueError("class needs to be bcc, mel or scc")
 
         elif self.chall == "chall1":
-            if label == "nev":
+            if label == "nevus":
                 return 0
             else:
                 return 1
@@ -316,8 +316,8 @@ class MelanomaDataModule(LightningDataModule):
         train_loader = DataLoader(
             self.train_dataset,
             batch_size=self.cfg.train_batch_size,
-            shuffle=True
-        )
+            shuffle=True,
+            num_workers=self.cfg.train_num_workers)
 
         return train_loader
 
@@ -325,12 +325,14 @@ class MelanomaDataModule(LightningDataModule):
         val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.cfg.val_batch_size,
-            shuffle=False)
+            shuffle=False,
+            num_workers=self.cfg.val_num_workers)
         return val_loader
 
     def test_dataloader(self):
         test_loader = DataLoader(
             self.test_dataset,
             batch_size=self.cfg.test_batch_size,
-            shuffle=False)
+            shuffle=False,
+            num_workers=self.cfg.test_num_workers)
         return test_loader
