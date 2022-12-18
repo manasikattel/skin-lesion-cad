@@ -42,7 +42,7 @@ class MelanomaDataset(Dataset):
 
         elif self.split == 'predict':
             self.sample_list = list(
-                (self._base_dir/Path("test")).rglob("*.jpg"))
+                (self._base_dir/Path("testX")).rglob("*.jpg"))
 
         if num is not None and self.split == "train":
             self.sample_list = self.sample_list[:num]
@@ -106,7 +106,7 @@ class MelanomaDataset(Dataset):
             normalize = transforms.Normalize(torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_MEAN)),
                                              torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_VAR)))
         else:
-            return img#/255.0
+            # return img#/255.0
             normalize = extended_transforms.NormalizePerImage()
         return normalize(img)
 
@@ -143,6 +143,8 @@ class MelanomaDataset(Dataset):
 
     def _get_image(self, img_path):
         img = cv2.imread(str(img_path))
+        if img is None:
+            raise ValueError("Image {} is None".format(img_path))
         if self.color_space == "RGB":
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img

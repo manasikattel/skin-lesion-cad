@@ -1,0 +1,3 @@
+_target_: skin_lesion_cad.training.models.regNet.RegNetY
+num_classes: 2
+weights: 'IMAGENET1K_V2'

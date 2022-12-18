@@ -8,7 +8,7 @@ from pytorch_lightning import LightningModule
 import torchmetrics
 
 class RegNetY(LightningModule):
-    def __init__(self, num_classes=2, weights="IMAGENET1K_V2"):
+    def __init__(self, num_classes, weights="IMAGENET1K_V2"):
         super().__init__()
 
         # init a pretrained regnet
@@ -20,8 +20,10 @@ class RegNetY(LightningModule):
 
         self.criterion = nn.CrossEntropyLoss()
         
-        self.train_acc = torchmetrics.Accuracy(task='multiclass',  num_classes=num_classes)
-        self.valid_acc = torchmetrics.Accuracy(task='multiclass',  num_classes=num_classes)
+        self.train_acc = torchmetrics.Accuracy(task='multiclass',
+                                               num_classes=num_classes, top_k=1)
+        self.valid_acc = torchmetrics.Accuracy(task='multiclass',
+                                               num_classes=num_classes, top_k=1)
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -30,7 +32,7 @@ class RegNetY(LightningModule):
 
     def training_step(self, batch, batch_idx):
         x = batch['image']
-        y = batch['label']
+        y = batch['label']  
         batch_size = len(y)
         y_hat = self.model(x)
         loss = self.criterion(y_hat, y)
