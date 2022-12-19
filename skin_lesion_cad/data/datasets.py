@@ -63,7 +63,7 @@ class MelanomaDataset(Dataset):
                 raise ValueError("class needs to be bcc, mel or scc")
 
         elif self.chall == "chall1":
-            if label == "nev":
+            if label == "nevus":
                 return 0
             else:
                 return 1
