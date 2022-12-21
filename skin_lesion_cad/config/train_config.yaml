@@ -10,6 +10,6 @@ pl_trainer:
 
 hydra:
   job:
-    name: regNet800_wAugm #SET THE EXPERIMENT NAME
+    name: regNet800_simple_augm #SET THE EXPERIMENT NAME
   run:
     dir: outputs/${hydra.job.name}

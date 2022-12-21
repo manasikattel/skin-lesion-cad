@@ -326,19 +326,25 @@ class MelanonaDatasetSimple(MelanomaDataset):
         return torchimage
 
 class MelanomaDataModule(LightningDataModule):
-    def __init__(self, cfg, DateSet=MelanonaDatasetSimple):
+    def __init__(self, cfg):
         super().__init__()
+        
+        if cfg.dataloader == 'simple':
+            self.DataSet = MelanonaDatasetSimple
+        else:
+            self.DataSet = MelanomaDataset
+            
         self.cfg = cfg
         if cfg.train:
-            self.train_dataset = DateSet(
+            self.train_dataset = self.DataSet(
                 cfg.data_dir, split="train", chall=cfg.chall, cfg=cfg)
-            self.val_dataset = DateSet(
+            self.val_dataset = self.DataSet(
                 cfg.data_dir, split="val", chall=cfg.chall, cfg=cfg)
             logger.info(
                 f'len of train examples {len(self.train_dataset)}, len of val examples {len(self.val_dataset)}'
             )
         else:
-            self.test_dataset = DateSet(
+            self.test_dataset = self.DataSet(
                 cfg.data_dir, split="test", chall=cfg.chall, cfg=cfg)
             logger.info(f'len of test examples {len(self.test_dataset)}')
 
