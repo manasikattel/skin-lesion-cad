@@ -88,7 +88,7 @@ class RandomCropInRate(object):
             y_l = int(image_height * (1.0 - self.rand_rate[0]) / 2)
             y_r = int(image_height - y_l) - new_height
         if x_r <= x_l or y_r <= y_l:
-            print(image.size)
+            # print(image.size)
             raise ValueError('Invalid rand_rate: {}'.format(self.rand_rate))
 
         if 0 < new_height < image_height:

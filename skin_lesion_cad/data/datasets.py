@@ -10,6 +10,9 @@ import torchvision.transforms as transforms
 import skin_lesion_cad.data.transforms as extended_transforms
 from torch.utils.data import DataLoader
 import cv2
+from torchvision.models.regnet import RegNet_X_800MF_Weights
+regNet_transf = RegNet_X_800MF_Weights.IMAGENET1K_V2.transforms(crop_size=224)
+
 logger = logging.getLogger(__name__)
 
 
@@ -297,20 +300,45 @@ class MelanomaDataset(Dataset):
         return img
 
 
+class MelanonaDatasetSimple(MelanomaDataset):
+    def __init__(self, base_dir=None, split='train', chall="chall2", num=None, cfg=None):
+        super().__init__(base_dir, split, chall, num, cfg)
+        self.cfg = cfg
+
+    def __getitem__(self, idx):
+        case = self.sample_list[idx]
+        image = self._get_image(case)
+        label = self.get_class(str(case.parent.stem))
+        image = self.image_transform(image, idx)
+        if self.split != "predict":
+            sample = {'image': image, 'label': torch.tensor(label),
+                      'name': case.stem}
+        else:
+            sample = {'image': image,
+                      'name': case.stem}
+
+        sample["idx"] = idx
+
+        return sample
+    def image_transform(self, img, index):
+        timage = torch.Tensor(img).permute(2, 1, 0).to(torch.uint8)
+        torchimage = regNet_transf.forward(timage)
+        return torchimage
+
 class MelanomaDataModule(LightningDataModule):
-    def __init__(self, cfg):
+    def __init__(self, cfg, DateSet=MelanonaDatasetSimple):
         super().__init__()
         self.cfg = cfg
         if cfg.train:
-            self.train_dataset = MelanomaDataset(
+            self.train_dataset = DateSet(
                 cfg.data_dir, split="train", chall=cfg.chall, cfg=cfg)
-            self.val_dataset = MelanomaDataset(
+            self.val_dataset = DateSet(
                 cfg.data_dir, split="val", chall=cfg.chall, cfg=cfg)
             logger.info(
                 f'len of train examples {len(self.train_dataset)}, len of val examples {len(self.val_dataset)}'
             )
         else:
-            self.test_dataset = MelanomaDataset(
+            self.test_dataset = DateSet(
                 cfg.data_dir, split="test", chall=cfg.chall, cfg=cfg)
             logger.info(f'len of test examples {len(self.test_dataset)}')
 
@@ -338,3 +366,4 @@ class MelanomaDataModule(LightningDataModule):
             shuffle=False,
             num_workers=self.cfg.test_num_workers)
         return test_loader
+
