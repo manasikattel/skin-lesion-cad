@@ -1,0 +1,41 @@
+_target_: skin_lesion_cad.data.datasets.MelanomaDataModule
+cfg:
+  data_dir: data/raw
+  chall: chall2
+  batch_size: 64
+  train_batch_size: 1
+  val_batch_size: 1
+  test_batch_size: 1
+  train_num_workers: 4
+  val_num_workers: 4
+  test_num_workers: 4
+  train: True
+  INPUT_SIZE: [250, 250]
+  COLOR_SPACE: 'RGB'
+  SAMPLER:
+    TYPE: 'default'
+    BORDER_CROP: 'ratio'
+    BORDER_CROP_PIXEL: 0
+    BORDER_CROP_RATIO: 0.0
+    IMAGE_RESIZE: True
+    IMAGE_RESIZE_SHORT: 336
+    COLOR_CONSTANCY: False
+    AUGMENT:
+      NEED_AUGMENT: True
+      AUG_METHOD: 'v1_1'
+      AUG_PROB: 0.7
+      AUG_MAG: 10
+      AUG_LAYER_NUM: 2
+    DUAL_SAMPLER:
+      TYPE: 'reverse'
+    MULTI_CROP:
+      ENABLE: True
+      CROP_NUM: 16
+      SCHEME: 'average'
+      L_REGION: 1.0
+      S_REGION: 1.0
+
+    FIX_MEAN_VAR:
+      ENABLE: True
+      SET_MEAN: [0.485, 0.456, 0.406]
+      SET_VAR: [0.229, 0.224, 0.225]
