@@ -32,9 +32,7 @@ def main(cfg: DictConfig) -> Optional[float]:
 
         image = image.squeeze(0)#.permute(2, 1, 0)
 
-        # regNet_transf = RegNet_X_800MF_Weights.IMAGENET1K_V2.transforms(crop_size=224)
-        # image = regNet_transf.forward(image)
-        
+        # FOR VISUALIZATION USE train_batch_size: 1
         image = DeNormalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225])(image)
 
