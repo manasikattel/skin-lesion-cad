@@ -10,6 +10,9 @@ import torchvision.transforms as transforms
 import skin_lesion_cad.data.transforms as extended_transforms
 from torch.utils.data import DataLoader
 import cv2
+from torchvision.models.regnet import RegNet_X_800MF_Weights
+regNet_transf = RegNet_X_800MF_Weights.IMAGENET1K_V2.transforms(crop_size=224)
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +45,7 @@ class MelanomaDataset(Dataset):
 
         elif self.split == 'predict':
             self.sample_list = list(
-                (self._base_dir/Path("test")).rglob("*.jpg"))
+                (self._base_dir/Path("testX")).rglob("*.jpg"))
 
         if num is not None and self.split == "train":
             self.sample_list = self.sample_list[:num]
@@ -89,10 +92,11 @@ class MelanomaDataset(Dataset):
     def image_transform(self, img, index):
         img = self.image_pre_process(img)
 
-        if self.split == "train":
-            img = self._train_transform(img, index)
-        else:
-            img = self._val_transform(img, index)
+        if not self.cfg.AVOID_AUGM:
+            if self.split == "train":
+                img = self._train_transform(img, index)
+            else:
+                img = self._val_transform(img, index)
         img = self.image_post_process(img)
         return img
 
@@ -100,11 +104,12 @@ class MelanomaDataset(Dataset):
         # change the format of 'img' to tensor, and change the storage order from 'H x W x C' to 'C x H x W'
         # change the value range of 'img' from [0, 255] to [0.0, 1.0]
         to_tensor = transforms.ToTensor()
-        img = to_tensor(img)
+        img = to_tensor(img)       
         if self.cfg.SAMPLER.FIX_MEAN_VAR.ENABLE:
             normalize = transforms.Normalize(torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_MEAN)),
                                              torch.from_numpy(np.array(self.cfg.SAMPLER.FIX_MEAN_VAR.SET_VAR)))
         else:
+            # return img#/255.0
             normalize = extended_transforms.NormalizePerImage()
         return normalize(img)
 
@@ -141,6 +146,8 @@ class MelanomaDataset(Dataset):
 
     def _get_image(self, img_path):
         img = cv2.imread(str(img_path))
+        if img is None:
+            raise ValueError("Image {} is None".format(img_path))
         if self.color_space == "RGB":
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         return img
@@ -217,7 +224,7 @@ class MelanomaDataset(Dataset):
                 self.cfg.SAMPLER.IMAGE_RESIZE_SHORT)
             img = resizing(img)
 
-        if self.cfg.SAMPLER.COLOR_CONSTANCY:
+        if self.cfg.SAMPLER.COLOR_CONSTANCY and self.cfg.SAMPLER.APPLY_COLOR_CONSTANCY:
             color_constancy = extended_transforms.ColorConstancy(
                 power=self.cfg.SAMPLER.CONSTANCY_POWER,
                 gamma=None if self.cfg.SAMPLER.CONSTANCY_GAMMA == 0.0 else self.cfg.SAMPLER.CONSTANCY_GAMMA
@@ -293,20 +300,51 @@ class MelanomaDataset(Dataset):
         return img
 
 
+class MelanonaDatasetSimple(MelanomaDataset):
+    def __init__(self, base_dir=None, split='train', chall="chall2", num=None, cfg=None):
+        super().__init__(base_dir, split, chall, num, cfg)
+        self.cfg = cfg
+
+    def __getitem__(self, idx):
+        case = self.sample_list[idx]
+        image = self._get_image(case)
+        label = self.get_class(str(case.parent.stem))
+        image = self.image_transform(image, idx)
+        if self.split != "predict":
+            sample = {'image': image, 'label': torch.tensor(label),
+                      'name': case.stem}
+        else:
+            sample = {'image': image,
+                      'name': case.stem}
+
+        sample["idx"] = idx
+
+        return sample
+    def image_transform(self, img, index):
+        timage = torch.Tensor(img).permute(2, 1, 0).to(torch.uint8)
+        torchimage = regNet_transf.forward(timage)
+        return torchimage
+
 class MelanomaDataModule(LightningDataModule):
     def __init__(self, cfg):
         super().__init__()
+        
+        if cfg.dataloader == 'simple':
+            self.DataSet = MelanonaDatasetSimple
+        else:
+            self.DataSet = MelanomaDataset
+            
         self.cfg = cfg
         if cfg.train:
-            self.train_dataset = MelanomaDataset(
+            self.train_dataset = self.DataSet(
                 cfg.data_dir, split="train", chall=cfg.chall, cfg=cfg)
-            self.val_dataset = MelanomaDataset(
+            self.val_dataset = self.DataSet(
                 cfg.data_dir, split="val", chall=cfg.chall, cfg=cfg)
             logger.info(
                 f'len of train examples {len(self.train_dataset)}, len of val examples {len(self.val_dataset)}'
             )
         else:
-            self.test_dataset = MelanomaDataset(
+            self.test_dataset = self.DataSet(
                 cfg.data_dir, split="test", chall=cfg.chall, cfg=cfg)
             logger.info(f'len of test examples {len(self.test_dataset)}')
 
@@ -314,8 +352,8 @@ class MelanomaDataModule(LightningDataModule):
         train_loader = DataLoader(
             self.train_dataset,
             batch_size=self.cfg.train_batch_size,
-            shuffle=True
-        )
+            shuffle=True,
+            num_workers=self.cfg.train_num_workers)
 
         return train_loader
 
@@ -323,12 +361,15 @@ class MelanomaDataModule(LightningDataModule):
         val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.cfg.val_batch_size,
-            shuffle=False)
+            shuffle=False,
+            num_workers=self.cfg.val_num_workers)
         return val_loader
 
     def test_dataloader(self):
         test_loader = DataLoader(
             self.test_dataset,
             batch_size=self.cfg.test_batch_size,
-            shuffle=False)
+            shuffle=False,
+            num_workers=self.cfg.test_num_workers)
         return test_loader
+

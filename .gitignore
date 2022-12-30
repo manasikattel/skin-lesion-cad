@@ -137,3 +137,8 @@ data/raw
 
 /*.pkl
 /*csv
+
+# Igmore hydra outputs
+/outputs/
+
+/lightning_logs/
