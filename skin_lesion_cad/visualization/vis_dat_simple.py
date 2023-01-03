@@ -30,17 +30,28 @@ def main(cfg: DictConfig) -> Optional[float]:
         
         image = data["image"]
 
-        image = image.squeeze(0)#.permute(2, 1, 0)
+        image = image.squeeze(0)
 
         # FOR VISUALIZATION USE train_batch_size: 1
         image = DeNormalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225])(image)
 
+        batch_size = 1
         image = image.numpy()
+        # for batch sizes > 1
+        if len(image.shape) == 4:
+            batch_size = image.shape[0]
+            image = image[0]
+        
         image = image.transpose(2, 1, 0)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        cv2.imshow(f"{data['name']} {data['label']}",
-                   image)
+        
+        if batch_size != 1:
+            cv2.imshow(f"{data['name'][0]} {data['label'][0]}",
+                    image)
+        else:
+            cv2.imshow(f"{data['name']} {data['label']}",
+                    image)
         if cv2.waitKey(0) & 0xFF == ord('q'):
             break
 

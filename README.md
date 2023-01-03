@@ -85,3 +85,18 @@ Ensemble class for training the models can be found in `skin-lesion-cad/data/ens
 * Challenge 2: `Challenge2_FinalPipeLine.ipynb`, `FinalTestResults.ipynb`, `1.2_mk_chall2_pred_test.ipynb`
 
 
+# Deep Learning
+## Running Experiments
+
+1. Update corresponding config files `train_config.yaml`, `regNet.yaml` and `skin.yaml` in `skin_lesion_cad/configs/` folder. Don't forget to change the `hydra.job.name` to a unique name for each experiment.
+2. Run the following command from the root of the repo `../skin-lesion-cad$` to run the experiment:
+```
+python3 -m skin_lesion_cad.training.train_ch1
+```
+
+## Visualizing data
+1. Update the configs`train_config.yaml`, `regNet.yaml` and `skin.yaml` in `skin_lesion_cad/configs/` to display required images.
+2. Run the following command from the root of the repo `../skin-lesion-cad$`
+```
+python3 -m skin_lesion_cad.visualization.vis_dat_simple
+```

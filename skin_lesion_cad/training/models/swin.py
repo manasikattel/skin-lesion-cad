@@ -7,17 +7,16 @@ from pytorch_lightning import LightningModule
 
 import torchmetrics
 
-class RegNetY(LightningModule):
-    def __init__(self, num_classes, weights="IMAGENET1K_V2"):
+class SwinModel(LightningModule):
+    def __init__(self, num_classes=2, weights="IMAGENET1K_V1"):
         super().__init__()
 
-        # init a pretrained regnet
-        self.model = models.regnet_y_1_6gf(weights=weights)
+        # init a pretrained model
+        self.model = models.swin_v2_s(weights=models.Swin_V2_S_Weights.IMAGENET1K_V1)
 
         # replace the last FC layer
-        num_filters = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_filters, num_classes)
-
+        num_filters = self.model.head.in_features
+        self.model.head = nn.Linear(num_filters, num_classes)
         self.criterion = nn.CrossEntropyLoss()
         
         self.train_acc = torchmetrics.Accuracy(task='multiclass',
@@ -64,10 +63,10 @@ class RegNetY(LightningModule):
                  batch_size=batch_size)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
 
 
 if __name__ == "__main__":
-    model = RegNetY()
+    model = SwinModel()
     print(model)

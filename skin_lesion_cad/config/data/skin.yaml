@@ -4,15 +4,15 @@ cfg:
   chall: chall1
   dataloader: 'full'
   batch_size: 1
-  train_batch_size: 32
-  AVOID_AUGM: False
-  val_batch_size: 32
-  test_batch_size: 32
+  train_batch_size: 64
+  AVOID_AUGM: False # when True, the data augmentation is not applied
+  val_batch_size: 64
+  test_batch_size: 64
   train_num_workers: 10
   val_num_workers: 10
   test_num_workers: 10
   train: True
-  INPUT_SIZE: [224, 224]
+  INPUT_SIZE: [256, 256]
   COLOR_SPACE: 'RGB'
   SAMPLER:
     TYPE: 'default'
