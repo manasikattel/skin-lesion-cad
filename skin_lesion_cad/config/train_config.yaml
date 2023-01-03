@@ -1,15 +1,15 @@
 defaults:
   - _self_
   - data: skin
-  - model: swin
+  - model: regNet
   # - model: regNet / swin
 pl_trainer:
-  max_epochs: 60
-  devices: [1]
+  max_epochs: 30
+  devices: [0]
   accelerator: 'gpu'
 
 hydra:
   job:
-    name: swin_small_v2_full_augm
+    name: regnet_y_3_2gf_full_augm
   run:
     dir: outputs/${hydra.job.name}

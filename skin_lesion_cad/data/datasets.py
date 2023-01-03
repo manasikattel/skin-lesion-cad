@@ -92,11 +92,10 @@ class MelanomaDataset(Dataset):
     def image_transform(self, img, index):
         img = self.image_pre_process(img)
 
-        if not self.cfg.AVOID_AUGM:
-            if self.split == "train":
-                img = self._train_transform(img, index)
-            else:
-                img = self._val_transform(img, index)
+        if self.split == "train":
+            img = self._train_transform(img, index)
+        else:
+            img = self._val_transform(img, index)
         img = self.image_post_process(img)
         return img
 
