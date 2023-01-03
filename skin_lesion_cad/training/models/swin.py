@@ -7,12 +7,33 @@ from pytorch_lightning import LightningModule
 
 import torchmetrics
 
+def get_swinv2_model(model_cls: str, weights: str):
+    """Retrieves a regnet model from torchvision.models
+
+    Args:
+        model_cls (str): Model name from torchvision.models.
+        weights (str): Weights to use for the model.
+
+    Raises:
+        ValueError: If the model_cls is not supported.
+
+    Returns:
+        torch model
+    """
+    if model_cls == 'swin_v2_t':
+        return models.swin_v2_t(weights=weights)
+    elif model_cls == 'swin_v2_s':
+        return models.swin_v2_s(weights=weights)
+    elif model_cls == 'swin_v2_b':
+        return models.swin_v2_b(weights=weights)
+    else:
+        raise ValueError(f"model_cls {model_cls} not supported")
+
 class SwinModel(LightningModule):
-    def __init__(self, num_classes=2, weights="IMAGENET1K_V1"):
+    def __init__(self, num_classes, model_class, weights="IMAGENET1K_V1"):
         super().__init__()
 
-        # init a pretrained model
-        self.model = models.swin_v2_s(weights=models.Swin_V2_S_Weights.IMAGENET1K_V1)
+        self.model = get_swinv2_model(model_class, weights=weights)
 
         # replace the last FC layer
         num_filters = self.model.head.in_features

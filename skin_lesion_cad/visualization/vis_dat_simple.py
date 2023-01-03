@@ -26,7 +26,6 @@ def main(cfg: DictConfig) -> Optional[float]:
     data_module = datamodule.data
     data_module.prepare_data()
     for data in data_module.train_dataloader():
-
         
         image = data["image"]
 
