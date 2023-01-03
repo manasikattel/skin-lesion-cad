@@ -7,12 +7,37 @@ from pytorch_lightning import LightningModule
 
 import torchmetrics
 
+def get_regnet_model(model_cls: str, weights: str):
+    """Retrieves a regnet model from torchvision.models
+
+    Args:
+        model_cls (str): Model name from torchvision.models.
+        weights (str): Weights to use for the model.
+
+    Raises:
+        ValueError: If the model_cls is not supported.
+
+    Returns:
+        torch model
+    """
+    if model_cls == 'regnet_y_800mf':
+        return models.regnet_y_800mf(weights=weights)
+    elif model_cls == 'regnet_y_1_6gf':
+        return models.regnet_y_1_6gf(weights=weights)
+    elif model_cls == 'regnet_y_3_2gf':
+        return models.regnet_y_3_2gf(weights=weights)
+    elif model_cls == 'regnet_y_8gf':
+        return models.regnet_y_8gf(weights=weights)
+    elif model_cls == 'regnet_y_16gf':
+        return models.regnet_y_16gf(weights=weights)
+    else:
+        raise ValueError(f"model_cls {model_cls} not supported")
+
 class RegNetY(LightningModule):
-    def __init__(self, num_classes, weights="IMAGENET1K_V2"):
+    def __init__(self, num_classes, model_cls, weights="IMAGENET1K_V2"):
         super().__init__()
 
-        # init a pretrained regnet
-        self.model = models.regnet_y_1_6gf(weights=weights)
+        self.model = get_regnet_model(model_cls, weights=weights)
 
         # replace the last FC layer
         num_filters = self.model.fc.in_features
