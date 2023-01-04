@@ -52,6 +52,7 @@ def main(cfg: DictConfig):
     # get model and trainer
     model = hydra.utils.instantiate(config=cfg.model)
     trainer = Trainer(**cfg.pl_trainer, logger=logger,
+                      auto_lr_find=True,
                       callbacks=[checkpoint_callback,
                                  early_stop_callback])
 
