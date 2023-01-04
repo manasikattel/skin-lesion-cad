@@ -14,7 +14,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pathlib import Path
 from hydra.core.hydra_config import HydraConfig
 import pandas as pd
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
 from skin_lesion_cad.validation.validate import validate2csv
 
 from tqdm import tqdm
@@ -29,17 +29,12 @@ def main(cfg: DictConfig):
     
     
     # saves top-K checkpoints based on "val_loss" metric
-    checkpoint_callback = ModelCheckpoint(save_top_k=2,
-                                          monitor="valid_acc",
-                                          mode="max",
-                                          filename="{epoch:02d}-{valid_acc:.4f}")
-    # enable early stopping
-    early_stop_callback = EarlyStopping(monitor="valid_acc",
-                                        min_delta=0.001,
-                                        patience=5,
-                                        verbose=False,
-                                        mode="max")
-
+    checkpoint_callback = ModelCheckpoint(
+        save_top_k=2,
+        monitor="valid_acc",
+        mode="max",
+        filename="{epoch:02d}-{valid_acc:.4f}",
+    )
     
     # default logger used by trainer
     logger = TensorBoardLogger(save_dir=hydra_logpath.resolve(),
@@ -51,18 +46,15 @@ def main(cfg: DictConfig):
     
     # get model and trainer
     model = hydra.utils.instantiate(config=cfg.model)
-    trainer = Trainer(**cfg.pl_trainer, logger=logger,
-                      callbacks=[checkpoint_callback,
-                                 early_stop_callback])
+    trainer = Trainer(**cfg.pl_trainer,
+                      logger=logger,
+                      auto_lr_find=True,
+                      callbacks=[checkpoint_callback])
 
-    # find optimal learning rate
     print('Default LR: ', model.learning_rate)
     trainer.tune(model, datamodule=melanoma_data_module)
     print('Tuned LR: ', model.learning_rate)
     
-    # train model
-    trainer.fit(model=model,
-                datamodule=melanoma_data_module)
-
+        
 if __name__ == "__main__":
     main()

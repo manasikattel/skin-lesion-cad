@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from pytorch_lightning import LightningModule
+from torch.optim.lr_scheduler import ReduceLROnPlateau, LinearLR
 
 import torchmetrics
 
@@ -30,9 +31,13 @@ def get_swinv2_model(model_cls: str, weights: str):
         raise ValueError(f"model_cls {model_cls} not supported")
 
 class SwinModel(LightningModule):
-    def __init__(self, num_classes, model_class, weights="IMAGENET1K_V1"):
+    def __init__(self, num_classes,
+                 model_class,
+                 learning_rate=1e-4,
+                 weights="IMAGENET1K_V1"):
         super().__init__()
 
+        self.learning_rate = learning_rate
         self.model = get_swinv2_model(model_class, weights=weights)
 
         # replace the last FC layer
@@ -84,8 +89,15 @@ class SwinModel(LightningModule):
                  batch_size=batch_size)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        
+        sch = ReduceLROnPlateau(optimizer, 'min',
+                                factor=0.2, patience=5)
+        
+        #learning rate scheduler
+        return {"optimizer": optimizer,
+                "lr_scheduler": {"scheduler": sch,
+                                 "monitor":"val_loss"}}
 
 
 if __name__ == "__main__":

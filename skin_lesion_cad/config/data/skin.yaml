@@ -2,7 +2,7 @@ _target_: skin_lesion_cad.data.datasets.MelanomaDataModule
 cfg:
   data_dir: data/raw
   chall: chall1
-  dataloader: 'simple'
+  dataloader: 'full' # full (with augm) or simple (without)
   batch_size: 1
   train_batch_size: 64
   val_batch_size: 64
@@ -11,7 +11,7 @@ cfg:
   val_num_workers: 10
   test_num_workers: 10
   train: True
-  INPUT_SIZE: [256, 256]
+  INPUT_SIZE: [224, 224]
   COLOR_SPACE: 'RGB'
   SAMPLER:
     TYPE: 'default'

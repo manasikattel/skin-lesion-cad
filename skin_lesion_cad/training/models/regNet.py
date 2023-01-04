@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 from pytorch_lightning import LightningModule
+from torch.optim.lr_scheduler import ReduceLROnPlateau, LinearLR
 
 import torchmetrics
 
@@ -34,10 +35,15 @@ def get_regnet_model(model_cls: str, weights: str):
         raise ValueError(f"model_cls {model_cls} not supported")
 
 class RegNetY(LightningModule):
-    def __init__(self, num_classes, model_cls, weights="IMAGENET1K_V2"):
+    def __init__(self, num_classes,
+                 model_class,
+                 weights="IMAGENET1K_V2",
+                 learning_rate=1e-3,):
         super().__init__()
 
-        self.model = get_regnet_model(model_cls, weights=weights)
+        self.learning_rate = learning_rate
+        
+        self.model = get_regnet_model(model_class, weights=weights)
 
         # replace the last FC layer
         num_filters = self.model.fc.in_features
@@ -89,8 +95,15 @@ class RegNetY(LightningModule):
                  batch_size=batch_size)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
-        return optimizer
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        
+        sch = ReduceLROnPlateau(optimizer, 'min',
+                                factor=0.2, patience=5)
+        
+        #learning rate scheduler
+        return {"optimizer": optimizer,
+                "lr_scheduler": {"scheduler": sch,
+                                 "monitor":"val_loss"}}
 
 
 if __name__ == "__main__":
