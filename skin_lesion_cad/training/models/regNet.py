@@ -98,7 +98,7 @@ class RegNetY(LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         
         sch = ReduceLROnPlateau(optimizer, 'min',
-                                factor=0.2, patience=5)
+                                factor=0.2, patience=8)
         
         #learning rate scheduler
         return {"optimizer": optimizer,

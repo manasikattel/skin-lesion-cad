@@ -33,10 +33,10 @@ def main(cfg: DictConfig):
                                           monitor="valid_acc",
                                           mode="max",
                                           filename="{epoch:02d}-{valid_acc:.4f}")
-    # enable early stopping
+    # enable early stopping (NOT USED RN)
     early_stop_callback = EarlyStopping(monitor="valid_acc",
-                                        min_delta=0.001,
-                                        patience=5,
+                                        min_delta=0.0001,
+                                        patience=10,
                                         verbose=False,
                                         mode="max")
 
@@ -53,8 +53,7 @@ def main(cfg: DictConfig):
     model = hydra.utils.instantiate(config=cfg.model)
     trainer = Trainer(**cfg.pl_trainer, logger=logger,
                       auto_lr_find=True,
-                      callbacks=[checkpoint_callback,
-                                 early_stop_callback])
+                      callbacks=[checkpoint_callback])
 
     # find optimal learning rate
     print('Default LR: ', model.learning_rate)
@@ -62,6 +61,7 @@ def main(cfg: DictConfig):
     print('Tuned LR: ', model.learning_rate)
     
     # train model
+    print("Training model...")
     trainer.fit(model=model,
                 datamodule=melanoma_data_module)
 
