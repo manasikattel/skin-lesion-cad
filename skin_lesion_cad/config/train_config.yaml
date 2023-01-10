@@ -1,7 +1,7 @@
 defaults:
   - _self_
   - data: skin
-  - model: swin
+  - model: regNet
   # - model: regNet / swin
 pl_trainer:
   max_epochs: 100
@@ -10,6 +10,8 @@ pl_trainer:
 
 hydra:
   job:
-    name: swin_v2_t_100ep_no_augm
+    name: regnety32gf_ch2_pretrained_focal
+    # regnety32gf_ch2_pretrained
+    # swinv2t_ch2_pretrained
   run:
     dir: outputs/${hydra.job.name}

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torchvision.models as models
 from pytorch_lightning import LightningModule
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LinearLR
+from skin_lesion_cad.utils.training_utils import get_loss
 
 import torchmetrics
 
@@ -38,23 +39,47 @@ class RegNetY(LightningModule):
     def __init__(self, num_classes,
                  model_class,
                  weights="IMAGENET1K_V2",
-                 learning_rate=1e-3,):
+                 learning_rate=1e-3,
+                 loss:str = "cross_entropy",
+                 chkp_pretrained: str|None = None):
         super().__init__()
-
+        
+        # save the hyperparameters
         self.learning_rate = learning_rate
+        self.loss = loss
+        self.criterion = get_loss(loss)
+        self.num_classes = num_classes
+        self.chkp_pretrained = chkp_pretrained
         
-        self.model = get_regnet_model(model_class, weights=weights)
+        # load the model
+        if self.chkp_pretrained is not None:
+            
+            # load from checkpoint
+            self.model = RegNetY.load_from_checkpoint(chkp_pretrained).model
+            
+            # replace las fc if trained with a different number of classes
+            if self.model.fc.out_features != num_classes:
+                num_filters = self.model.fc.in_features
+                self.model.fc = nn.Linear(num_filters, num_classes)
+            
+            print(f"Loaded model {chkp_pretrained} and set for {num_classes} classes")
+        else:
+            self.model = get_regnet_model(model_class, weights=weights)
 
-        # replace the last FC layer
-        num_filters = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_filters, num_classes)
-
-        self.criterion = nn.CrossEntropyLoss()
+            # replace the last FC layer
+            num_filters = self.model.fc.in_features
+            self.model.fc = nn.Linear(num_filters, num_classes)
         
-        self.train_acc = torchmetrics.Accuracy(task='multiclass',
-                                               num_classes=num_classes, top_k=1)
-        self.valid_acc = torchmetrics.Accuracy(task='multiclass',
-                                               num_classes=num_classes, top_k=1)
+        # set up metrics to train
+        if self.num_classes == 2:
+            self.train_acc = torchmetrics.Accuracy(task='multiclass',
+                                                num_classes=num_classes, top_k=1)
+            self.valid_acc = torchmetrics.Accuracy(task='multiclass',
+                                                num_classes=num_classes, top_k=1)
+        elif self.num_classes == 3:
+            self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
+            self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
+        
         self.save_hyperparameters()
 
     def forward(self, x):
@@ -66,17 +91,28 @@ class RegNetY(LightningModule):
         y = batch['label']  
         batch_size = len(y)
         y_hat = self.model(x)
-        loss = self.criterion(y_hat, y)
         
+        loss = self.criterion(y_hat, y)
+        # need to manually average loss per batch
+        if self.loss == 'focal':
+            loss = loss.mean()
+
         self.log("train_loss", loss, on_step=False,
                  on_epoch=True, prog_bar=True,
                  logger=True, batch_size=batch_size)
         
-        self.train_acc(y_hat, y)
-        self.log('train_acc', self.train_acc,
-                 on_step=True,  on_epoch=True,
-                 prog_bar=True, logger=True,
-                 batch_size=batch_size)
+        if self.num_classes == 2:
+            self.train_acc(y_hat, y)
+            self.log('train_acc', self.train_acc,
+                    on_step=True,  on_epoch=True,
+                    prog_bar=True, logger=True,
+                    batch_size=batch_size)
+        elif self.num_classes == 3:
+            self.train_kappa(y_hat, y)
+            self.log('train_kappa', self.train_kappa,
+                    on_step=True,  on_epoch=True,
+                    prog_bar=True, logger=True,
+                    batch_size=batch_size)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -85,15 +121,24 @@ class RegNetY(LightningModule):
         batch_size = len(y)
         y_hat = self.model(x)
         
-        loss = F.cross_entropy(y_hat, y)
+        loss = self.criterion(y_hat, y)
+        # need to manually average loss per batch
+        if self.loss == 'focal':
+            loss = loss.mean()
         self.log("val_loss", loss, batch_size=batch_size)
         
-        self.valid_acc(y_hat, y)
-        self.log('valid_acc', self.valid_acc,
+        if self.num_classes == 2:
+            self.valid_acc(y_hat, y)
+            self.log('valid_acc', self.valid_acc,
                  on_step=True, on_epoch=True,
                  prog_bar=True, logger=True,
                  batch_size=batch_size)
-
+        elif self.num_classes == 3:
+            self.valid_kappa(y_hat, y)
+            self.log('valid_kappa', self.valid_kappa,
+                    on_step=True,  on_epoch=True,
+                    prog_bar=True, logger=True,
+                    batch_size=batch_size)
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         
