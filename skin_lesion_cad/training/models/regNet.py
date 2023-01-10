@@ -39,15 +39,16 @@ class RegNetY(LightningModule):
     def __init__(self, num_classes,
                  model_class,
                  weights="IMAGENET1K_V2",
-                 learning_rate=1e-3,
+                 learning_rate=1e-4,
                  loss:str = "cross_entropy",
-                 chkp_pretrained: str|None = None):
+                 chkp_pretrained: str|None = None,
+                 device=None):
         super().__init__()
         
         # save the hyperparameters
         self.learning_rate = learning_rate
         self.loss = loss
-        self.criterion = get_loss(loss)
+        self.criterion = get_loss(loss, device=device, num_classes=num_classes)
         self.num_classes = num_classes
         self.chkp_pretrained = chkp_pretrained
         
@@ -139,6 +140,14 @@ class RegNetY(LightningModule):
                     on_step=True,  on_epoch=True,
                     prog_bar=True, logger=True,
                     batch_size=batch_size)
+            
+    def training_epoch_end(self, training_step_outputs):
+        # do something with all training_step outputs
+        # for out in training_step_outputs:
+        if self.loss == 'mwn':
+            self.criterion.reset_epoch(self.current_epoch)
+            
+    
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         

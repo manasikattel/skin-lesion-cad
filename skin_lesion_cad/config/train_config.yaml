@@ -1,16 +1,16 @@
 defaults:
   - _self_
   - data: skin
-  - model: regNet
+  - model: swin
   # - model: regNet / swin
-pl_trainer:
+pl_trainer:   
   max_epochs: 100
   devices: [0]
   accelerator: 'gpu'
 
 hydra:
   job:
-    name: regnety32gf_ch2_pretrained_focal
+    name: swinv2t_ch2_pretrained_mwnl
     # regnety32gf_ch2_pretrained
     # swinv2t_ch2_pretrained
   run:
