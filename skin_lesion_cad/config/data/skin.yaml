@@ -13,6 +13,8 @@ cfg:
   train: True
   INPUT_SIZE: [256, 256]
   COLOR_SPACE: 'RGB'
+  WEIGHTED_SAMPLING: True
+  SAMPLING_WEIGHT: [0.00050176, 0.0003686, 0.00265957]
   SAMPLER:
     TYPE: 'default'
     BORDER_CROP: 'ratio'
