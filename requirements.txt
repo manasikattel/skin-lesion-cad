@@ -30,4 +30,5 @@ pytorch-lightning==1.8.3.post1
 opencv-contrib-python
 scikit-image
 cvxopt
+yacs
 kornia

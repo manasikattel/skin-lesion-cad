@@ -1,0 +1,8 @@
+_target_: skin_lesion_cad.training.models.ensemble.ConvTransformerEnsemble
+num_classes: 3
+regnet_chkp_path : /home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_ch2_pretrained_focal/lightning_logs/version_1/checkpoints/epoch=57-valid_kappa=0.8950.ckpt
+swin_chkp_path : /home/user0/cad_vlanasi/skin-lesion-cad/outputs/swinv2t_ch2_pretrained_focal/lightning_logs/version_1/checkpoints/epoch=50-valid_kappa=0.9349.ckpt
+loss: mwnl # cross_entropy, focal, tversky or mwnl
+device: 2
+freeze : True # whether to freeze the backbones or not
+lr: 0.0001

@@ -3,7 +3,7 @@ cfg:
   data_dir: data/raw
   chall: chall2 # chall1 chall2
   dataloader: 'full' # full (with augm) or simple (without)
-  batch_size: 1
+  batch_size: 64
   train_batch_size: 64
   val_batch_size: 64
   test_batch_size: 64

@@ -16,7 +16,7 @@ def get_loss(name, device=None, num_classes=None):
         return losses.TverskyLoss(0.4, 0.4)
     elif name == 'mwnl':
         mwnl_params['device'] = f'cuda:{device}'
-        mwnl_params['num_class_list'] = list(range(num_classes))
+        mwnl_params['num_class_list'] = list(range(1, num_classes+1))
         loss = MWNLoss(para_dict=mwnl_params)
         loss.reset_epoch(0)
         return loss

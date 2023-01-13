@@ -66,17 +66,17 @@ _C.CLASSIFIER.BIAS = True
 # ----- LOSS BUILDER -----
 _C.LOSS = CN()
 _C.LOSS.WEIGHT_POWER = 1.1
-_C.LOSS.EXTRA_WEIGHT = [1.0, 1.0, 1.0, 1.0, 1.0]
+_C.LOSS.EXTRA_WEIGHT = [1.0, 1.0, 1.0]
 _C.LOSS.LOSS_TYPE = "MWNLoss"  # "CrossEntropy", "LDAMLoss", "FocalLoss", "LOWLoss", "GHMCLoss", "CCELoss", "MWNLoss"
-_C.LOSS.SCHEDULER = "default"       # "default"--the weights of all classes are "1.0",
+_C.LOSS.SCHEDULER = "re_weight"       # "default"--the weights of all classes are "1.0",
                                     # "re_weight"--re-weighting by the power of inverse class frequency at all train stage,
                                     # "drw"--two-stage strategy using re-weighting at the second stage,
                                     # "cls"--cumulative learning strategy to set loss weight.
 # For drw scheduler
 _C.LOSS.DRW_EPOCH = 50
 # For cls scheduler
-_C.LOSS.CLS_EPOCH_MIN = 20
-_C.LOSS.CLS_EPOCH_MAX = 60
+_C.LOSS.CLS_EPOCH_MIN = 10
+_C.LOSS.CLS_EPOCH_MAX = 80
 
 # For LDAMLoss
 _C.LOSS.LDAM = CN()

@@ -2,7 +2,7 @@ defaults:
   - _self_
   - data: skin
   - model: swin
-  # - model: regNet / swin
+  # - model: regNet / swin / swinregnet
 pl_trainer:   
   max_epochs: 100
   devices: [0]
@@ -10,8 +10,9 @@ pl_trainer:
 
 hydra:
   job:
-    name: swinv2t_ch2_pretrained_mwnl
+    name: swinv2t_ch2_pretrained_mwnl_cls
     # regnety32gf_ch2_pretrained
     # swinv2t_ch2_pretrained
+    # ens_freeze
   run:
     dir: outputs/${hydra.job.name}
