@@ -46,11 +46,15 @@ def main(cfg: DictConfig):
     
     # get model and trainer
     model = hydra.utils.instantiate(config=cfg.model)
-    trainer = Trainer(**cfg.pl_trainer, logger=logger,
+    trainer = Trainer(**cfg.pl_trainer,
+                      logger=logger,
+                      auto_lr_find=True,
                       callbacks=[checkpoint_callback])
 
-    trainer.fit(model=model,
-                datamodule=melanoma_data_module)
-
+    print('Default LR: ', model.learning_rate)
+    trainer.tune(model, datamodule=melanoma_data_module)
+    print('Tuned LR: ', model.learning_rate)
+    
+        
 if __name__ == "__main__":
     main()

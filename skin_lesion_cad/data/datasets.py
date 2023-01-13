@@ -8,7 +8,7 @@ import numpy as np
 import skin_lesion_cad.data.data_augmentation as rand_augment
 import torchvision.transforms as transforms
 import skin_lesion_cad.data.transforms as extended_transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 import cv2
 from torchvision.models.regnet import RegNet_X_800MF_Weights
 regNet_transf = RegNet_X_800MF_Weights.IMAGENET1K_V2.transforms(crop_size=224)
@@ -53,6 +53,17 @@ class MelanomaDataset(Dataset):
 
     def __len__(self):
         return len(self.sample_list)
+    
+    def get_sample_weights(self):
+        if self.chall=="chall2":
+            weight_map = {0:self.cfg.SAMPLING_WEIGHT[0], 1:self.cfg.SAMPLING_WEIGHT[1], 2:self.cfg.SAMPLING_WEIGHT[2]}
+        elif self.chall=="chall1":
+            weight_map = {0:self.cfg.SAMPLING_WEIGHT[0], 1:self.cfg.SAMPLING_WEIGHT[1]}
+        else:
+            raise Exception(
+                "Argument chall must be either `chall1` or `chall2`")
+        labels = [self.get_class(str(case.parent.stem)) for case in self.sample_list]
+        return [*map(weight_map.get, labels)]
 
     def get_class(self, label):
         if self.chall == "chall2":
@@ -348,7 +359,17 @@ class MelanomaDataModule(LightningDataModule):
             logger.info(f'len of test examples {len(self.test_dataset)}')
 
     def train_dataloader(self):
-        train_loader = DataLoader(
+        if self.cfg.WEIGHTED_SAMPLING:
+            weights = self.train_dataset.get_sample_weights()
+            sampler = WeightedRandomSampler(weights, len(self.train_dataset))
+            train_loader = DataLoader(
+            self.train_dataset,
+            batch_size=self.cfg.train_batch_size,
+            sampler=sampler,
+            num_workers=self.cfg.train_num_workers)
+
+        else:
+            train_loader = DataLoader(
             self.train_dataset,
             batch_size=self.cfg.train_batch_size,
             shuffle=True,
@@ -357,11 +378,21 @@ class MelanomaDataModule(LightningDataModule):
         return train_loader
 
     def val_dataloader(self):
-        val_loader = DataLoader(
+        if self.cfg.WEIGHTED_SAMPLING:
+            weights = self.val_dataset.get_sample_weights()
+            sampler = WeightedRandomSampler(weights, len(self.val_dataset))
+            val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.cfg.val_batch_size,
-            shuffle=False,
+            sampler=sampler,
             num_workers=self.cfg.val_num_workers)
+
+        else:
+            val_loader = DataLoader(
+                self.val_dataset,
+                batch_size=self.cfg.val_batch_size,
+                shuffle=False,
+                num_workers=self.cfg.val_num_workers)
         return val_loader
 
     def test_dataloader(self):

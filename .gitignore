@@ -140,5 +140,5 @@ data/raw
 
 # Igmore hydra outputs
 /outputs/
-
+/outputs_backup/
 /lightning_logs/

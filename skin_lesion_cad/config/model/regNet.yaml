@@ -1,4 +1,7 @@
 _target_: skin_lesion_cad.training.models.regNet.RegNetY
-num_classes: 2
+num_classes: 3
 weights: 'IMAGENET1K_V2'
 model_class: 'regnet_y_3_2gf'
+loss: mwnl # cross_entropy, focal, tversky or mwnl
+device: 0
+chkp_pretrained: '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnet_y_3_2gf_100ep_full_augm/lightning_logs/version_1/checkpoints/epoch=62-valid_acc=0.8978.ckpt' # if None, train from scratch, otherwise chkp path

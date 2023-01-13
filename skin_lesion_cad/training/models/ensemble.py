@@ -1,76 +1,56 @@
-from typing import Any
+import pytorch_lightning as pl
 import torch
-import torch.nn as nn
+import torchmetrics
 import torch.nn.functional as F
-import torchvision.models as models
-from pytorch_lightning import LightningModule
+from torch.utils.data import DataLoader, TensorDataset
+from skin_lesion_cad.training.models.regNet import RegNetY
+from skin_lesion_cad.training.models.swin import SwinModel
 from torch.optim.lr_scheduler import ReduceLROnPlateau, LinearLR
+
 from skin_lesion_cad.utils.training_utils import get_loss
 
-import torchmetrics
-
-def get_regnet_model(model_cls: str, weights: str):
-    """Retrieves a regnet model from torchvision.models
-
-    Args:
-        model_cls (str): Model name from torchvision.models.
-        weights (str): Weights to use for the model.
-
-    Raises:
-        ValueError: If the model_cls is not supported.
-
-    Returns:
-        torch model
-    """
-    if model_cls == 'regnet_y_800mf':
-        return models.regnet_y_800mf(weights=weights)
-    elif model_cls == 'regnet_y_1_6gf':
-        return models.regnet_y_1_6gf(weights=weights)
-    elif model_cls == 'regnet_y_3_2gf':
-        return models.regnet_y_3_2gf(weights=weights)
-    elif model_cls == 'regnet_y_8gf':
-        return models.regnet_y_8gf(weights=weights)
-    elif model_cls == 'regnet_y_16gf':
-        return models.regnet_y_16gf(weights=weights)
-    else:
-        raise ValueError(f"model_cls {model_cls} not supported")
-
-class RegNetY(LightningModule):
-    def __init__(self, num_classes,
-                 model_class,
-                 weights="IMAGENET1K_V2",
-                 learning_rate=1e-4,
-                 loss:str = "cross_entropy",
-                 chkp_pretrained: str|None = None,
-                 device=None):
+class ConvTransformerEnsemble(pl.LightningModule):
+    def __init__(self,
+                 num_classes:int,
+                 regnet_chkp_path:str,
+                 swin_chkp_path:str,
+                 loss:str,
+                 device=None,
+                 freeze:bool=True,
+                 lr:float=1e-4,
+                 ):
         super().__init__()
         
-        # save the hyperparameters
-        self.learning_rate = learning_rate
+        # save hyperparameters
+        self.regnet_chkp_path = regnet_chkp_path
+        self.swin_chkp_path = swin_chkp_path
+        self.freeze_backbones = freeze
         self.loss = loss
         self.criterion = get_loss(loss, device=device, num_classes=num_classes)
         self.num_classes = num_classes
-        self.chkp_pretrained = chkp_pretrained
+        self.learning_rate = lr
         
-        # load the model
-        if self.chkp_pretrained is not None:
-            
-            # load from checkpoint
-            self.model = RegNetY.load_from_checkpoint(chkp_pretrained).model
-            
-            # replace las fc if trained with a different number of classes
-            if self.model.fc.out_features != num_classes:
-                num_filters = self.model.fc.in_features
-                self.model.fc = nn.Linear(num_filters, num_classes)
-            
-            print(f"Loaded model {chkp_pretrained} and set for {num_classes} classes")
-        else:
-            self.model = get_regnet_model(model_class, weights=weights)
+        # load pretrained models
+        self.regnet = RegNetY.load_from_checkpoint(regnet_chkp_path)
+        self.swin = SwinModel.load_from_checkpoint(swin_chkp_path)
+        
 
-            # replace the last FC layer
-            num_filters = self.model.fc.in_features
-            self.model.fc = nn.Linear(num_filters, num_classes)
         
+        if self.freeze_backbones:
+            self.regnet.freeze()
+            self.swin.freeze()
+        
+        # create classifier and merge in it the feature encodings
+        regnet_enc_dim = self.regnet.model.fc.in_features
+        swin_enc_dim = self.swin.model.head.in_features
+        in_features = regnet_enc_dim + swin_enc_dim
+
+        self.classifier = torch.nn.Linear(in_features, num_classes)
+
+        # remove last softmax output layer and replace with Identity
+        self.regnet.model.fc = torch.nn.Identity()
+        self.swin.model.head = torch.nn.Identity()
+
         # set up metrics to train
         if self.num_classes == 2:
             self.train_acc = torchmetrics.Accuracy(task='multiclass',
@@ -80,18 +60,36 @@ class RegNetY(LightningModule):
         elif self.num_classes == 3:
             self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
             self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
-        
+
+
         self.save_hyperparameters()
 
-    def forward(self, x):
-        y = self.model(x).flatten(1)
-        return y
 
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        
+        sch = ReduceLROnPlateau(optimizer, 'min',
+                                factor=0.2, patience=8)
+        
+        #learning rate scheduler
+        return {"optimizer": optimizer,
+                "lr_scheduler": {"scheduler": sch,
+                                 "monitor":"val_loss"}}
+
+
+    def forward(self, x):
+        regnet_enc = self.regnet(x) # 64x3
+        swin_enc = self.swin(x) 
+        x = torch.cat((regnet_enc, swin_enc), dim=1)
+        x = self.classifier(x)
+        return x
+    
+    
     def training_step(self, batch, batch_idx):
         x = batch['image']
         y = batch['label']  
         batch_size = len(y)
-        y_hat = self.model(x)
+        y_hat = self.forward(x) # notice we change .model to .forward
         
         loss = self.criterion(y_hat, y)
         # need to manually average loss per batch
@@ -120,7 +118,7 @@ class RegNetY(LightningModule):
         x = batch['image']
         y = batch['label']
         batch_size = len(y)
-        y_hat = self.model(x)
+        y_hat = self.forward(x) # notice we change .model to .forward
         
         loss = self.criterion(y_hat, y)
         # need to manually average loss per batch
@@ -146,20 +144,3 @@ class RegNetY(LightningModule):
         # for out in training_step_outputs:
         if self.loss == 'mwn':
             self.criterion.reset_epoch(self.current_epoch)
-            
-    
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        
-        sch = ReduceLROnPlateau(optimizer, 'min',
-                                factor=0.2, patience=8)
-        
-        #learning rate scheduler
-        return {"optimizer": optimizer,
-                "lr_scheduler": {"scheduler": sch,
-                                 "monitor":"val_loss"}}
-
-
-if __name__ == "__main__":
-    model = RegNetY()
-    print(model)

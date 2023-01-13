@@ -1,15 +1,18 @@
 defaults:
   - _self_
   - data: skin
-  - model: regNet
-  # - model: regNet / swin
-pl_trainer:
-  max_epochs: 30
+  - model: swin
+  # - model: regNet / swin / swinregnet
+pl_trainer:   
+  max_epochs: 100
   devices: [0]
   accelerator: 'gpu'
 
 hydra:
   job:
-    name: regnet_y_3_2gf_full_augm
+    name: swinv2t_ch2_pretrained_mwnl_cls
+    # regnety32gf_ch2_pretrained
+    # swinv2t_ch2_pretrained
+    # ens_freeze
   run:
     dir: outputs/${hydra.job.name}
