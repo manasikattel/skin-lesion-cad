@@ -36,7 +36,7 @@ class SwinModel(LightningModule):
                  learning_rate=1e-4,
                  weights="IMAGENET1K_V1",
                  loss: str = "cross_entropy",
-                 chkp_pretrained: str|None=None,
+                 chkp_pretrained: str=None,
                  device=None):
         
         super().__init__()
@@ -74,8 +74,8 @@ class SwinModel(LightningModule):
             self.valid_acc = torchmetrics.Accuracy(task='multiclass',
                                                 num_classes=num_classes, top_k=1)
         elif self.num_classes == 3:
-            self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
-            self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
+            self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes, task="multiclass")
+            self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes, task="multiclass")
         
         self.save_hyperparameters()
 
@@ -135,6 +135,14 @@ class SwinModel(LightningModule):
                     on_step=True,  on_epoch=True,
                     prog_bar=True, logger=True,
                     batch_size=batch_size)
+
+    def predict_step(self, batch, batch_idx):
+        x = batch['image']
+        names = batch['name']
+        batch_size = len(names)
+        y_hat =  [i.argmax().item() for i in self.model(x)]
+        return names,y_hat
+
     def training_epoch_end(self, training_step_outputs):
         # do something with all training_step outputs
         # for out in training_step_outputs:
