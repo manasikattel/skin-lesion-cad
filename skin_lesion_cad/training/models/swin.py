@@ -49,7 +49,7 @@ class SwinModel(LightningModule):
         self.chkp_pretrained = chkp_pretrained
         
         # load the model
-        if self.chkp_pretrained is not None:
+        if self.chkp_pretrained is not None and self.chkp_pretrained!='None':
             # load from checkpoint
             self.model = SwinModel.load_from_checkpoint(chkp_pretrained).model
             if self.model.head.out_features != num_classes:
@@ -73,7 +73,7 @@ class SwinModel(LightningModule):
                                                 num_classes=num_classes, top_k=1)
             self.valid_acc = torchmetrics.Accuracy(task='multiclass',
                                                 num_classes=num_classes, top_k=1)
-        elif self.num_classes == 3:
+        elif self.num_classes >= 3:
             self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
             self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes)
         
@@ -103,7 +103,7 @@ class SwinModel(LightningModule):
                     on_step=True,  on_epoch=True,
                     prog_bar=True, logger=True,
                     batch_size=batch_size)
-        elif self.num_classes == 3:
+        elif self.num_classes >= 3:
             self.train_kappa(y_hat, y)
             self.log('train_kappa', self.train_kappa,
                     on_step=True,  on_epoch=True,
@@ -129,7 +129,7 @@ class SwinModel(LightningModule):
                  on_step=True, on_epoch=True,
                  prog_bar=True, logger=True,
                  batch_size=batch_size)
-        elif self.num_classes == 3:
+        elif self.num_classes >= 3:
             self.valid_kappa(y_hat, y)
             self.log('valid_kappa', self.valid_kappa,
                     on_step=True,  on_epoch=True,
