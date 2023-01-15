@@ -1,7 +1,7 @@
 _target_: skin_lesion_cad.data.datasets.MelanomaDataModule
 cfg:
   data_dir: data/raw
-  chall: pretraining # chall1 chall2 or pretraining
+  chall: chall1 # chall1 chall2 or pretraining
   dataloader: 'full' # full (with augm) or simple (without)
   batch_size: 64
   train_batch_size: 64

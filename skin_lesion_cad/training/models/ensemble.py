@@ -45,6 +45,11 @@ class ConvTransformerEnsemble(pl.LightningModule):
         swin_enc_dim = self.swin.model.head.in_features
         in_features = regnet_enc_dim + swin_enc_dim
 
+        
+        # self.classifier = torch.nn.Sequential(torch.nn.Linear(in_features, 512),
+        #                                       torch.nn.Softmax(),
+        #                                       #torch.nn.Dropout(0.2),
+        #                                       torch.nn.Linear(512, num_classes))
         self.classifier = torch.nn.Linear(in_features, num_classes)
 
         # remove last softmax output layer and replace with Identity

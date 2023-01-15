@@ -55,6 +55,13 @@ class RegNetY(LightningModule):
         # load the model
         if self.chkp_pretrained is not None and self.chkp_pretrained != 'None':
             
+            if self.chkp_pretrained =='/home/mira1/vlex_mira/vcad/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt':
+                self.chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt'
+                chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt'
+            
+            if self.chkp_pretrained =='/home/mira1/vlex_mira/vcad/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt':
+                self.chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt'
+                chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt'
             # load from checkpoint
             self.model = RegNetY.load_from_checkpoint(chkp_pretrained).model
             
