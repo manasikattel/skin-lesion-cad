@@ -53,8 +53,15 @@ class RegNetY(LightningModule):
         self.chkp_pretrained = chkp_pretrained
         
         # load the model
-        if self.chkp_pretrained is not None:
+        if self.chkp_pretrained is not None and self.chkp_pretrained != 'None':
             
+            if self.chkp_pretrained =='/home/mira1/vlex_mira/vcad/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt':
+                self.chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt'
+                chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet/lightning_logs/version_1/checkpoints/epoch=52-valid_kappa=0.8180.ckpt'
+            
+            if self.chkp_pretrained =='/home/mira1/vlex_mira/vcad/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt':
+                self.chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt'
+                chkp_pretrained = '/home/user0/cad_vlanasi/skin-lesion-cad/outputs/regnety32gf_pretrain_imagenet_tune2class/lightning_logs/version_1/checkpoints/epoch=28-valid_acc=0.9136.ckpt'
             # load from checkpoint
             self.model = RegNetY.load_from_checkpoint(chkp_pretrained).model
             
@@ -77,7 +84,8 @@ class RegNetY(LightningModule):
                                                 num_classes=num_classes, top_k=1)
             self.valid_acc = torchmetrics.Accuracy(task='multiclass',
                                                 num_classes=num_classes, top_k=1)
-        elif self.num_classes == 3:
+
+        elif self.num_classes >= 3:
             self.train_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes,task="multiclass")
             self.valid_kappa = torchmetrics.CohenKappa(num_classes=self.num_classes,task="multiclass")
         
@@ -108,7 +116,7 @@ class RegNetY(LightningModule):
                     on_step=True,  on_epoch=True,
                     prog_bar=True, logger=True,
                     batch_size=batch_size)
-        elif self.num_classes == 3:
+        elif self.num_classes >= 3:
             self.train_kappa(y_hat, y)
             self.log('train_kappa', self.train_kappa,
                     on_step=True,  on_epoch=True,
@@ -134,7 +142,7 @@ class RegNetY(LightningModule):
                  on_step=True, on_epoch=True,
                  prog_bar=True, logger=True,
                  batch_size=batch_size)
-        elif self.num_classes == 3:
+        elif self.num_classes >= 3:
             self.valid_kappa(y_hat, y)
             self.log('valid_kappa', self.valid_kappa,
                     on_step=True,  on_epoch=True,

@@ -15,6 +15,7 @@ regNet_transf = RegNet_X_800MF_Weights.IMAGENET1K_V2.transforms(crop_size=224)
 
 logger = logging.getLogger(__name__)
 
+PRETRAINING_LABELS = {'ack':0,'bcc':1,'bkl':2,'def':3,'mel':4,'nev':5,'scc':6,'vac':7}
 
 def worker_init_fn(worker_id):
     """PyTorch Dataloader worker init function for setting different seed to each worker process
@@ -26,7 +27,10 @@ def worker_init_fn(worker_id):
 
 class MelanomaDataset(Dataset):
     def __init__(self, base_dir=None, split='train', chall="chall2", num=None, cfg=None):
-        self._base_dir = base_dir/Path(chall)
+        if chall == 'pretraining':
+            self._base_dir = base_dir/Path('chall1')
+        else:
+            self._base_dir = base_dir/Path(chall)
         self.sample_list = []
         self.split = split
         self.transform = transforms
@@ -81,6 +85,8 @@ class MelanomaDataset(Dataset):
                 return 0
             else:
                 return 1
+        elif self.chall == "pretraining":
+            return PRETRAINING_LABELS[label]
         else:
             raise Exception(
                 "Argument chall must be either `chall1` or `chall2`")
@@ -88,7 +94,14 @@ class MelanomaDataset(Dataset):
     def __getitem__(self, idx):
         case = self.sample_list[idx]
         image = self._get_image(case)
-        label = self.get_class(str(case.parent.stem))
+        
+        if self.chall == "pretraining":
+            img_label = case.stem[:3]
+        else:
+            img_label = str(case.parent.stem)
+        
+        label = self.get_class(img_label)
+        
         image = self.image_transform(image, idx)
         if self.split != "predict":
             sample = {'image': image, 'label': torch.tensor(label),

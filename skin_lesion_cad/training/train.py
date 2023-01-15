@@ -27,7 +27,7 @@ def main(cfg: DictConfig):
     hydra_logpath = Path(HydraConfig.get().run.dir).resolve()
     print("LOGGING TO: ", hydra_logpath)
     
-    if cfg.model.num_classes == 3:
+    if cfg.model.num_classes >= 3:
         cllback_filename = "{epoch:02d}-{valid_kappa:.4f}"
         cllback_monitor = "valid_kappa"
 
