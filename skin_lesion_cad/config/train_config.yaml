@@ -1,0 +1,18 @@
+defaults:
+  - _self_
+  - data: skin
+  - model: swinregnet
+  # - model: regNet / swin / swinregnet
+pl_trainer:   
+  max_epochs: 50
+  devices: [0]
+  accelerator: 'gpu'
+
+hydra:
+  job:
+    name: ens_nofreeze_tuned2class_pretext
+    # regnety32gf_ch2_pretrained
+    # swinv2t_ch2_pretrained
+    # ens_freeze
+  run:
+    dir: outputs/${hydra.job.name}

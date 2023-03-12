@@ -127,3 +127,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore data folders
+data/processed
+data/raw
+
+/*.pkl
+/*csv
+
+# Igmore hydra outputs
+/outputs/
+/outputs_backup/
+/lightning_logs/
