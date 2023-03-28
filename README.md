@@ -105,6 +105,7 @@ Ensemble class for training the models can be found in `skin-lesion-cad/data/ens
 
 
 # Deep Learning
+Take a look at `./skin_lesion_cad/training/models` to see the DL models implementations.
 ## Running Experiments
 
 1. Update corresponding config files `train_config.yaml`, `regNet.yaml` and `skin.yaml` in `skin_lesion_cad/configs/` folder. Don't forget to change the `hydra.job.name` to a unique name for each experiment.
