@@ -1,5 +1,10 @@
 # Computer Aided Diagnosis of Skin Lesions
+<p align="center">
+  <a href="https://lightning.ai/docs/pytorch/stable/">PyTorch Lightning</a> •
+  <a href="https://pytorch.org/docs/">PyTorch</a> •
+  <a href="https://github.com/facebookresearch/hydra">Hydra</a> •
 
+</p>
 The repository contains results and code for the project skin lesion classification, which includes 2 challenges:
 
 * Challenge 1: Binary classification: Nevus vs. Others
