@@ -9,7 +9,10 @@ ___
 
 ### The presentation of results and approaches can be seen in following pdfs:
 * [Part 1: ML and Bag of Visual Words](reports/CAD_%20Skin%20Lesion%20Project%201.pdf)
+    * Manual feature engineering, extraction and analysis of ABCD rule features and their importance, lesion segmentation and hair removal pipelines (with grayscale morphology), experiments with the custom Bag of Visual Words implementation on subsets of features and final model ensembling and tackling the imbalances
+
 * [Part 2: Deep Learning and pretext training](reports/_CAD_%20Skin%20Lesion%20Project%202.pdf)
+    * Comparison between the best CNN (RegNetY) and transformer (Swin) model's performances; models and loss tuning; bottleneck embedding fusion experiments and pretext training on a subset of classes
 ___
 The data for the challenge was provided by the course organizers. It consisted of images from HAM10000 Dataset (ViDIR Group, Medical University of Vienna), the BCN_20000 Dataset (Hospital Clínic de Barcelona) and the MSK Dataset (ISBI 2017).
 
