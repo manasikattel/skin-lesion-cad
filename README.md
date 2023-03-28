@@ -1,13 +1,29 @@
-# skin-lesion-cad
+# Computer Aided Diagnosis of Skin Lesion 
 
-This repository contains our work for the project skin lesion classification; which includes 2 challenges:
+The repository contains results and code for the project skin lesion classification, which includes 2 challenges:
 
 * Challenge 1: Binary classification: Nevus vs. Others
 * Challenge 2: Three class problem: Basal Cell vs. Squamous Cell vs. Melanoma
+___
+**Our solution ranked top-1 on a private leaderboard for the binary classification challenge for both ML and DL implementations while our DL also solution ranked top 3 for the 3-class imbalanced problem**
 
-. Preprocessing includes step such as hair removal, Field of View (FoV) artifact removal and segmentation. Then features such as Color, Texture(LBP, GLCM) and Shape features are extracted and selected along with dimensionality reduction. Finally, grid search for multiple machine learning classifiers and their ensembles are experimented with to choose the best classifier.
+### The presentation of results and approaches can be seen in following pdfs:
+* [Part 1: ML and Bag of Visual Words](reports/CAD_%20Skin%20Lesion%20Project%201.pdf)
+* [Part 2: Deep Learning and pretext training](reports/_CAD_%20Skin%20Lesion%20Project%202.pdf)
+___
+The data for the challenge was provided by the course organizers. It consisted of images from HAM10000 Dataset (ViDIR Group, Medical University of Vienna), the BCN_20000 Dataset (Hospital Clínic de Barcelona) and the MSK Dataset (ISBI 2017).
+
+For the binary classification problem we had ~15,000 images while for the highly imbalanced 3-class only ~5,000 images from following categories.
+![Data](imgs/data_overview.png)
 
 
+
+# Contributors
+* Vladyslav Zalevskyi [GitHub](https://github.com/Vivikar) | [LinkedIn](https://www.linkedin.com/in/vlad-zalevskyi/)
+* Manasi Kattel [GitHub](https://github.com/manasikattel) | [LinkedIn](https://www.linkedin.com/in/manasi-kattel/)
+
+
+# Reproduction details
 ## Set up the environment
 
 Rung following code to set up a conda environment with all the packages needed to run the project.
