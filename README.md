@@ -1,4 +1,4 @@
-# Computer Aided Diagnosis of Skin Lesion 
+# Computer Aided Diagnosis of Skin Lesions
 
 The repository contains results and code for the project skin lesion classification, which includes 2 challenges:
 
